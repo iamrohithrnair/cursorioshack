@@ -13,13 +13,20 @@ import { AUTOMATIONS, runAutomation } from './src/automations';
 import { AccessScreen } from './src/screens/AccessScreen';
 import { BuilderScreen } from './src/screens/BuilderScreen';
 import { KeyboardScreen } from './src/screens/KeyboardScreen';
+import { SetupScreen } from './src/screens/SetupScreen';
 import { SkillsScreen } from './src/screens/SkillsScreen';
-import { loadBindings, saveBindings } from './src/storage';
+import {
+  loadBindings,
+  loadSetupDone,
+  saveBindings,
+  saveSetupDone,
+} from './src/storage';
 import { colors } from './src/theme';
 import type { AutomationId, KeyBindings, TabId } from './src/types';
 
 export default function App() {
-  const [tab, setTab] = useState<TabId>('keyboard');
+  const [ready, setReady] = useState(false);
+  const [tab, setTab] = useState<TabId>('setup');
   const [text, setText] = useState('');
   const [shift, setShift] = useState(false);
   const [bindings, setBindings] = useState<KeyBindings | null>(null);
@@ -28,7 +35,15 @@ export default function App() {
   const [claimed, setClaimed] = useState(false);
 
   useEffect(() => {
-    void loadBindings().then(setBindings);
+    void (async () => {
+      const [nextBindings, setupDone] = await Promise.all([
+        loadBindings(),
+        loadSetupDone(),
+      ]);
+      setBindings(nextBindings);
+      setTab(setupDone ? 'keyboard' : 'setup');
+      setReady(true);
+    })();
   }, []);
 
   const updateBindings = async (next: KeyBindings) => {
@@ -44,7 +59,7 @@ export default function App() {
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
-  if (!bindings) {
+  if (!ready || !bindings) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator color={colors.ink} />
@@ -56,6 +71,16 @@ export default function App() {
     <View style={styles.root}>
       <SafeAreaView style={styles.safe}>
         <StatusBar style="dark" />
+
+        {tab === 'setup' ? (
+          <SetupScreen
+            onContinue={() => {
+              void saveSetupDone();
+              setTab('keyboard');
+            }}
+            onOpenDemoKeyboard={() => setTab('keyboard')}
+          />
+        ) : null}
 
         {tab === 'keyboard' ? (
           <KeyboardScreen
@@ -93,7 +118,9 @@ export default function App() {
         onPick={(id) => {
           if (!assignKey) return;
           void updateBindings({ ...bindings, [assignKey]: id });
-          setStatus(`Assigned ${AUTOMATIONS[id].title} to ${assignKey === ' ' ? 'Keysor bar' : assignKey}`);
+          setStatus(
+            `Assigned ${AUTOMATIONS[id].title} to ${assignKey === ' ' ? 'Keysor bar' : assignKey}`,
+          );
           setAssignKey(null);
         }}
         onClear={() => {
