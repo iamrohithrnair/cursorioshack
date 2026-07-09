@@ -1,10 +1,10 @@
-import type { Automation, AutomationId, KeyBindings } from './types';
+import type { Automation, BuiltinAutomationId, KeyBindings } from './types';
 
 function clean(input: string) {
   return input.trim() || 'your note';
 }
 
-export const AUTOMATIONS: Record<AutomationId, Automation> = {
+export const AUTOMATIONS: Record<BuiltinAutomationId, Automation> = {
   cursor: {
     id: 'cursor',
     title: 'Fix from phone',
@@ -146,6 +146,6 @@ export const DEFAULT_BINDINGS: KeyBindings = {
   p: 'plan',
 };
 
-export function runAutomation(id: AutomationId, input: string) {
+export function runAutomation(id: BuiltinAutomationId, input: string) {
   return AUTOMATIONS[id].run(input);
 }

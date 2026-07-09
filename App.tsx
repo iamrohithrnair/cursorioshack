@@ -11,8 +11,10 @@ import { AssignSheet } from './src/components/AssignSheet';
 import { FloatingTabBar } from './src/components/FloatingTabBar';
 import { PromptPreview } from './src/components/PromptPreview';
 import { AUTOMATIONS, runAutomation } from './src/automations';
+import { findCustomSkill } from './src/customSkills';
 import { buildCursorPrompt, sendToCursorApp } from './src/cursorHandoff';
 import { INCIDENT_DEMO } from './src/demoIncident';
+import { runCustomSkillWithOpenAI } from './src/openai/runSkill';
 import { AccessScreen } from './src/screens/AccessScreen';
 import { BuilderScreen } from './src/screens/BuilderScreen';
 import { KeyboardScreen } from './src/screens/KeyboardScreen';
@@ -20,11 +22,14 @@ import { SetupScreen } from './src/screens/SetupScreen';
 import { SkillsScreen } from './src/screens/SkillsScreen';
 import {
   loadBindings,
+  loadCustomSkills,
   saveBindings,
   saveSetupDone,
+  upsertCustomSkill,
 } from './src/storage';
 import { colors } from './src/theme';
-import type { AutomationId, KeyBindings, TabId } from './src/types';
+import type { AutomationId, CustomSkill, KeyBindings, TabId } from './src/types';
+import { isBuiltinAutomationId } from './src/types';
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -32,6 +37,7 @@ export default function App() {
   const [text, setText] = useState(INCIDENT_DEMO);
   const [shift, setShift] = useState(false);
   const [bindings, setBindings] = useState<KeyBindings | null>(null);
+  const [customSkills, setCustomSkills] = useState<CustomSkill[]>([]);
   const [assignKey, setAssignKey] = useState<string | null>(null);
   const [status, setStatus] = useState('Hold the Keysor space bar to send to Cursor.');
   const [claimed, setClaimed] = useState(false);
@@ -44,10 +50,14 @@ export default function App() {
 
   useEffect(() => {
     void (async () => {
-      const nextBindings = await loadBindings();
+      const [nextBindings, skills] = await Promise.all([
+        loadBindings(),
+        loadCustomSkills(),
+      ]);
       // Space is always Cursor in the keyboard UI; keep binding in sync for Skills list.
       const forced = { ...nextBindings, ' ': 'cursor' as const };
       setBindings(forced);
+      setCustomSkills(skills);
       setTab('keyboard');
       setReady(true);
     })();
@@ -95,6 +105,19 @@ export default function App() {
     );
   }, []);
 
+  const deployCustomSkill = useCallback(async (skill: CustomSkill) => {
+    const next = await upsertCustomSkill(skill);
+    setCustomSkills(next);
+    // Auto-bind to `r` when free-ish so the skill is runnable immediately.
+    setBindings((current) => {
+      if (!current) return current;
+      const nextBindings = { ...current, r: skill.id };
+      void saveBindings({ ...nextBindings, ' ': 'cursor' });
+      return { ...nextBindings, ' ': 'cursor' };
+    });
+    setStatus(`Deployed ${skill.title} — long-press R on the keyboard to run it.`);
+  }, []);
+
   const runSkill = useCallback(
     (id: AutomationId, key: string) => {
       if (id === 'cursor' || key === ' ') {
@@ -105,11 +128,36 @@ export default function App() {
         return;
       }
 
-      setText((current) => runAutomation(id, current));
-      setStatus(`Ran ${AUTOMATIONS[id].title} from ${key}`);
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (isBuiltinAutomationId(id)) {
+        setText((current) => runAutomation(id, current));
+        setStatus(`Ran ${AUTOMATIONS[id].title} from ${key}`);
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        return;
+      }
+
+      const skill = findCustomSkill(customSkills, id);
+      if (!skill) {
+        setStatus('Custom skill missing — rebuild it in Skill Builder.');
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        return;
+      }
+
+      setSending(true);
+      setStatus(`Running ${skill.title} with OpenAI…`);
+      void (async () => {
+        const result = await runCustomSkillWithOpenAI(skill, text);
+        setText(result.text);
+        setSending(false);
+        if (result.source === 'openai') {
+          setStatus(`Ran ${skill.title} with OpenAI`);
+          void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } else {
+          setStatus(result.error ?? `Ran ${skill.title} (offline template)`);
+          void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        }
+      })();
     },
-    [handoffToCursor, lastIntent, text],
+    [customSkills, handoffToCursor, lastIntent, text],
   );
 
   if (!ready || !bindings) {
@@ -153,12 +201,15 @@ export default function App() {
         {tab === 'skills' ? (
           <SkillsScreen
             bindings={bindings}
+            customSkills={customSkills}
             onAssign={setAssignKey}
             onRun={runSkill}
           />
         ) : null}
 
-        {tab === 'builder' ? <BuilderScreen /> : null}
+        {tab === 'builder' ? (
+          <BuilderScreen customSkills={customSkills} onDeploySkill={deployCustomSkill} />
+        ) : null}
         {tab === 'access' ? (
           <AccessScreen claimed={claimed} onClaim={() => setClaimed(true)} />
         ) : null}
@@ -183,6 +234,7 @@ export default function App() {
       <AssignSheet
         visible={assignKey != null}
         keyLabel={assignKey}
+        customSkills={customSkills}
         onClose={() => setAssignKey(null)}
         onPick={(id) => {
           if (!assignKey) return;
@@ -193,7 +245,10 @@ export default function App() {
             return;
           }
           void updateBindings({ ...bindings, [assignKey]: id });
-          setStatus(`Assigned ${AUTOMATIONS[id].title} to ${assignKey}`);
+          const label = isBuiltinAutomationId(id)
+            ? AUTOMATIONS[id].title
+            : findCustomSkill(customSkills, id)?.title ?? 'skill';
+          setStatus(`Assigned ${label} to ${assignKey}`);
           setAssignKey(null);
         }}
         onClear={() => {

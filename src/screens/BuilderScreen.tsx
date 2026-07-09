@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import * as Haptics from 'expo-haptics';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -7,59 +9,224 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import {
+  DEFAULT_OPENAI_BASE_URL,
+  DEFAULT_OPENAI_MODEL,
+  loadOpenAIConfig,
+  maskApiKey,
+  saveOpenAIApiKey,
+  saveOpenAIBaseURL,
+  saveOpenAIModel,
+} from '../openai/config';
+import {
+  draftToCustomSkill,
+  runSkillBuilderTurn,
+  type BuilderChatMessage,
+  type BuilderDraft,
+} from '../openai/skillBuilder';
+import type { CustomSkill } from '../types';
 import { colors } from '../theme';
 
-type Msg =
+type UiMsg =
   | { id: string; role: 'user'; text: string }
-  | { id: string; role: 'ai'; text: string; config?: boolean };
+  | { id: string; role: 'ai'; text: string; draft?: BuilderDraft | null; ready?: boolean };
 
-const STARTER: Msg[] = [
+type Props = {
+  customSkills: CustomSkill[];
+  onDeploySkill: (skill: CustomSkill) => Promise<void> | void;
+};
+
+const STARTER: UiMsg[] = [
   {
     id: '1',
-    role: 'user',
-    text: 'I want to create a skill that generates fan promotional copy.',
-  },
-  {
-    id: '2',
     role: 'ai',
-    text: 'I am updating the skill configuration… Please confirm if this looks good to you!',
-    config: true,
+    text: 'Describe a keyboard skill like an intelligent Shortcut — what should happen to the text in the field, and which apps or APIs should it touch (Notion, Gmail, Calendar, Slack…)?',
   },
 ];
 
-export function BuilderScreen() {
-  const [messages, setMessages] = useState<Msg[]>(STARTER);
+export function BuilderScreen({ customSkills, onDeploySkill }: Props) {
+  const [messages, setMessages] = useState<UiMsg[]>(STARTER);
+  const [history, setHistory] = useState<BuilderChatMessage[]>([]);
   const [draft, setDraft] = useState('');
-  const [status, setStatus] = useState('Designer · Ready for your next instruction.');
+  const [status, setStatus] = useState('Designer · Add an OpenAI key to start.');
+  const [busy, setBusy] = useState(false);
+  const [pendingDraft, setPendingDraft] = useState<BuilderDraft | null>(null);
+  const [readyToDeploy, setReadyToDeploy] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [apiKey, setApiKey] = useState('');
+  const [model, setModel] = useState(DEFAULT_OPENAI_MODEL);
+  const [baseURL, setBaseURL] = useState(DEFAULT_OPENAI_BASE_URL);
+  const [hasKey, setHasKey] = useState(false);
+  const [deploying, setDeploying] = useState(false);
 
-  const send = () => {
+  const refreshConfig = useCallback(async () => {
+    const config = await loadOpenAIConfig();
+    setApiKey(config.apiKey);
+    setModel(config.model);
+    setBaseURL(config.baseURL);
+    setHasKey(!!config.apiKey);
+    if (config.apiKey) {
+      setStatus('Designer · Ready — describe a skill.');
+    } else {
+      setStatus('Designer · Add an OpenAI key to start.');
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshConfig();
+  }, [refreshConfig]);
+
+  const masked = useMemo(() => maskApiKey(apiKey), [apiKey]);
+
+  const saveSettings = async () => {
+    await saveOpenAIApiKey(apiKey);
+    await saveOpenAIModel(model);
+    await saveOpenAIBaseURL(baseURL);
+    await refreshConfig();
+    setShowSettings(false);
+    setStatus(
+      apiKey.trim()
+        ? `Designer · Key saved (${maskApiKey(apiKey.trim())}).`
+        : 'Designer · Key cleared.',
+    );
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  };
+
+  const send = async () => {
     const text = draft.trim();
-    if (!text) return;
+    if (!text || busy) return;
+
+    if (!hasKey) {
+      setShowSettings(true);
+      setStatus('Designer · Paste your OpenAI API key first.');
+      return;
+    }
+
     setDraft('');
-    setStatus('Designer · Checking the current draft.');
-    const userMsg: Msg = { id: String(Date.now()), role: 'user', text };
-    setMessages((prev) => [
+    setBusy(true);
+    setStatus('Designer · Thinking…');
+    const userMsg: UiMsg = { id: String(Date.now()), role: 'user', text };
+    setMessages((prev) => [...prev, userMsg]);
+
+    const result = await runSkillBuilderTurn({ history, userText: text });
+    const aiMsg: UiMsg = {
+      id: String(Date.now() + 1),
+      role: 'ai',
+      text: result.assistantText,
+      draft: result.draft,
+      ready: result.readyToDeploy,
+    };
+    setMessages((prev) => [...prev, aiMsg]);
+    setHistory((prev) => [
       ...prev,
-      userMsg,
-      {
-        id: String(Date.now() + 1),
-        role: 'ai',
-        text: 'Got it. I’ll wire that into a Keysor skill with text input and in-place preview output.',
-        config: true,
-      },
+      { role: 'user', content: text },
+      { role: 'assistant', content: result.assistantText },
     ]);
-    setTimeout(() => setStatus('Designer · Ready for your next instruction.'), 900);
+    setPendingDraft(result.draft);
+    setReadyToDeploy(result.readyToDeploy);
+    setStatus(
+      result.error
+        ? `Designer · ${result.error}`
+        : result.readyToDeploy
+          ? 'Designer · Draft ready — tap Deploy.'
+          : 'Designer · Ready for your next instruction.',
+    );
+    setBusy(false);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const deploy = async () => {
+    if (!pendingDraft || deploying) return;
+    setDeploying(true);
+    setStatus('Designer · Deploying skill…');
+    try {
+      const skill = draftToCustomSkill(pendingDraft, null, customSkills.length);
+      await onDeploySkill(skill);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: String(Date.now()),
+          role: 'ai',
+          text: `Deployed “${skill.title}”. Assign it to a key on the Skills tab, then long-press that key on the keyboard to run it with OpenAI.`,
+        },
+      ]);
+      setReadyToDeploy(false);
+      setStatus(`Designer · Deployed ${skill.title}.`);
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Deploy failed.';
+      setStatus(`Designer · ${message}`);
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setDeploying(false);
+    }
   };
 
   return (
     <View style={styles.root}>
       <View style={styles.header}>
-        <Text style={styles.back}>‹</Text>
+        <Pressable onPress={() => setShowSettings((v) => !v)} hitSlop={8}>
+          <Text style={styles.settingsBtn}>{showSettings ? 'Done' : 'Key'}</Text>
+        </Pressable>
         <Text style={styles.title}>Skill Builder</Text>
-        <View style={styles.deploy}>
-          <Text style={styles.deployText}>Deploy</Text>
-        </View>
+        <Pressable
+          style={[styles.deploy, (!readyToDeploy || !pendingDraft) && styles.deployDisabled]}
+          disabled={!readyToDeploy || !pendingDraft || deploying}
+          onPress={() => void deploy()}
+        >
+          {deploying ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={[styles.deployText, readyToDeploy && styles.deployTextActive]}>
+              Deploy
+            </Text>
+          )}
+        </Pressable>
       </View>
+
+      {showSettings ? (
+        <View style={styles.settings}>
+          <Text style={styles.settingsTitle}>OpenAI (on-device)</Text>
+          <Text style={styles.settingsHint}>
+            Keysor has no backend — the key stays in AsyncStorage on this phone. Use a restricted
+            key and rotate it if you share the device.
+          </Text>
+          <Text style={styles.label}>API key {hasKey ? `(${masked})` : ''}</Text>
+          <TextInput
+            value={apiKey}
+            onChangeText={setApiKey}
+            placeholder="sk-…"
+            placeholderTextColor={colors.textMuted}
+            autoCapitalize="none"
+            autoCorrect={false}
+            secureTextEntry
+            style={styles.field}
+          />
+          <Text style={styles.label}>Model</Text>
+          <TextInput
+            value={model}
+            onChangeText={setModel}
+            placeholder={DEFAULT_OPENAI_MODEL}
+            placeholderTextColor={colors.textMuted}
+            autoCapitalize="none"
+            autoCorrect={false}
+            style={styles.field}
+          />
+          <Text style={styles.label}>Base URL</Text>
+          <TextInput
+            value={baseURL}
+            onChangeText={setBaseURL}
+            placeholder={DEFAULT_OPENAI_BASE_URL}
+            placeholderTextColor={colors.textMuted}
+            autoCapitalize="none"
+            autoCorrect={false}
+            style={styles.field}
+          />
+          <Pressable style={styles.saveKey} onPress={() => void saveSettings()}>
+            <Text style={styles.saveKeyText}>Save</Text>
+          </Pressable>
+        </View>
+      ) : null}
 
       <ScrollView contentContainerStyle={styles.chat} style={styles.chatWrap}>
         {messages.map((msg) =>
@@ -71,12 +238,19 @@ export function BuilderScreen() {
             </View>
           ) : (
             <View key={msg.id} style={styles.aiWrap}>
-              {msg.config ? (
+              {msg.draft ? (
                 <View style={styles.config}>
-                  <Text style={styles.configTitle}>I/O Setup</Text>
-                  <Text style={styles.configLine}>Input: Text Entered</Text>
-                  <Text style={styles.configLine}>Output: Show Preview</Text>
-                  <Text style={styles.configLine}>Extra Runtime Input: Required</Text>
+                  <Text style={styles.configTitle}>{msg.draft.title}</Text>
+                  <Text style={styles.configLine}>{msg.draft.subtitle}</Text>
+                  <Text style={styles.configLine}>
+                    Integrations:{' '}
+                    {msg.draft.integrations.length
+                      ? msg.draft.integrations.map((i) => i.label).join(', ')
+                      : 'None'}
+                  </Text>
+                  {msg.ready ? (
+                    <Text style={styles.readyTag}>Ready to deploy</Text>
+                  ) : null}
                 </View>
               ) : null}
               <View style={styles.aiRow}>
@@ -90,6 +264,12 @@ export function BuilderScreen() {
             </View>
           ),
         )}
+        {busy ? (
+          <View style={styles.thinking}>
+            <ActivityIndicator color={colors.accent} />
+            <Text style={styles.thinkingText}>Designing skill…</Text>
+          </View>
+        ) : null}
       </ScrollView>
 
       <View style={styles.footer}>
@@ -101,10 +281,11 @@ export function BuilderScreen() {
             placeholder="Describe a skill…"
             placeholderTextColor={colors.textMuted}
             style={styles.input}
-            onSubmitEditing={send}
+            onSubmitEditing={() => void send()}
             returnKeyType="send"
+            editable={!busy}
           />
-          <Pressable style={styles.send} onPress={send}>
+          <Pressable style={styles.send} onPress={() => void send()} disabled={busy}>
             <Text style={styles.sendText}>■</Text>
           </Pressable>
         </View>
@@ -125,16 +306,11 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     marginBottom: 8,
   },
-  back: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    overflow: 'hidden',
-    textAlign: 'center',
-    lineHeight: 34,
-    fontSize: 28,
-    color: colors.ink,
-    backgroundColor: colors.surface,
+  settingsBtn: {
+    width: 48,
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.accent,
   },
   title: {
     fontSize: 18,
@@ -142,13 +318,71 @@ const styles = StyleSheet.create({
     color: colors.ink,
   },
   deploy: {
+    minWidth: 72,
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 999,
+    backgroundColor: colors.ink,
+    alignItems: 'center',
+  },
+  deployDisabled: {
     backgroundColor: '#E8EAED',
   },
   deployText: {
     color: colors.textMuted,
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  deployTextActive: {
+    color: '#fff',
+  },
+  settings: {
+    marginHorizontal: 18,
+    marginBottom: 12,
+    padding: 14,
+    borderRadius: 18,
+    backgroundColor: colors.surface,
+    gap: 6,
+    shadowColor: colors.shadow,
+    shadowOpacity: 1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  settingsTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.ink,
+  },
+  settingsHint: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: colors.textMuted,
+    marginBottom: 6,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSoft,
+    marginTop: 4,
+  },
+  field: {
+    borderRadius: 12,
+    backgroundColor: colors.surfaceMuted,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: colors.text,
+  },
+  saveKey: {
+    marginTop: 10,
+    alignSelf: 'flex-start',
+    backgroundColor: colors.accent,
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  saveKeyText: {
+    color: '#fff',
     fontWeight: '700',
     fontSize: 13,
   },
@@ -195,6 +429,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textSoft,
   },
+  readyTag: {
+    marginTop: 6,
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.accent,
+  },
   aiRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -228,6 +468,16 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 21,
     color: colors.text,
+  },
+  thinking: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    alignSelf: 'flex-end',
+  },
+  thinkingText: {
+    fontSize: 13,
+    color: colors.textMuted,
   },
   footer: {
     paddingHorizontal: 18,

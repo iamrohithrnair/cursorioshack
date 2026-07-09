@@ -1,18 +1,38 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AUTOMATION_LIST } from '../automations';
-import type { AutomationId, KeyBindings } from '../types';
+import type { AutomationId, CustomSkill, KeyBindings } from '../types';
+import { isBuiltinAutomationId } from '../types';
 import { colors } from '../theme';
 
 type Props = {
   bindings: KeyBindings;
+  customSkills: CustomSkill[];
   onAssign: (key: string) => void;
   onRun: (id: AutomationId, key: string) => void;
 };
 
-export function SkillsScreen({ bindings, onAssign, onRun }: Props) {
+export function SkillsScreen({ bindings, customSkills, onAssign, onRun }: Props) {
   const [tab, setTab] = useState<'featured' | 'latest'>('featured');
   const bound = Object.entries(bindings).filter(([, id]) => !!id) as [string, AutomationId][];
+
+  const resolveSkill = (id: AutomationId) => {
+    if (isBuiltinAutomationId(id)) {
+      return AUTOMATION_LIST.find((a) => a.id === id) ?? null;
+    }
+    const custom = customSkills.find((s) => s.id === id);
+    if (!custom) return null;
+    return {
+      id: custom.id,
+      title: custom.title,
+      subtitle: custom.subtitle,
+      letter: custom.letter,
+      tint: custom.tint,
+      downloads: 'You',
+      creator: 'You',
+      creatorSkills: `${custom.integrations.length} integrations`,
+    };
+  };
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
@@ -35,10 +55,49 @@ export function SkillsScreen({ bindings, onAssign, onRun }: Props) {
         ))}
       </View>
 
+      {customSkills.length > 0 ? (
+        <>
+          <Text style={styles.section}>YOUR CUSTOM SKILLS</Text>
+          <View style={styles.list}>
+            {customSkills.map((skill) => (
+              <Pressable
+                key={skill.id}
+                style={styles.card}
+                onPress={() => onAssign('r')}
+                onLongPress={() => onRun(skill.id, 'custom')}
+              >
+                <View style={styles.cardTop}>
+                  <View style={[styles.badge, { backgroundColor: skill.tint }]}>
+                    <Text style={styles.badgeText}>{skill.letter}</Text>
+                  </View>
+                  <View style={styles.cardCopy}>
+                    <Text style={styles.cardTitle}>{skill.title}</Text>
+                    <Text style={styles.cardKey}>{skill.subtitle}</Text>
+                  </View>
+                  <Text style={styles.downloads}>AI</Text>
+                </View>
+                <View style={styles.cardBottom}>
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>Y</Text>
+                  </View>
+                  <Text style={styles.creator}>You · Builder</Text>
+                  <Text style={styles.creatorMeta}>
+                    {skill.integrations.length
+                      ? skill.integrations.map((i) => i.label).join(', ')
+                      : 'No integrations'}
+                  </Text>
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        </>
+      ) : null}
+
       <Text style={styles.section}>SKILL KEYS</Text>
       <View style={styles.list}>
         {bound.map(([key, id], index) => {
-          const skill = AUTOMATION_LIST.find((a) => a.id === id)!;
+          const skill = resolveSkill(id);
+          if (!skill) return null;
           return (
             <Pressable
               key={`${key}-${id}`}
@@ -127,9 +186,11 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     color: colors.textMuted,
     marginBottom: 12,
+    marginTop: 8,
   },
   list: {
     gap: 12,
+    marginBottom: 8,
   },
   card: {
     backgroundColor: colors.surface,
@@ -212,6 +273,7 @@ const styles = StyleSheet.create({
   creatorMeta: {
     fontSize: 12,
     color: colors.textMuted,
+    maxWidth: '42%',
   },
   add: {
     marginTop: 18,
