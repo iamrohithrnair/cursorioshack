@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "Keysor",
+    "slug": "keysor",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B1C2C"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.keysor.keyboard",
+      "infoPlist": {
+        "CFBundleDisplayName": "Keysor"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0B1C2C",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "package": "com.keysor.keyboard"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
