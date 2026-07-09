@@ -31,11 +31,11 @@ export function PromptPreview({
           <Text style={styles.sub}>
             {opened
               ? copied
-                ? 'Cursor should open with this prompt filled in. If the field is empty, long-press → Paste.'
-                : 'Confirm the agent prompt in Cursor.'
+                ? 'Cursor app should open with this prompt. If the field is empty, long-press → Paste.'
+                : 'Confirm the agent prompt in the Cursor app.'
               : copied
-                ? 'Prompt is on your clipboard. Open Cursor and paste into a new agent chat.'
-                : 'Open Cursor and paste this prompt into a new agent chat.'}
+                ? 'Prompt is on your clipboard. Open the Cursor app and paste into a new agent chat.'
+                : 'Open the Cursor app and paste this prompt into a new agent chat.'}
           </Text>
 
           <ScrollView style={styles.promptBox} contentContainerStyle={styles.promptContent}>

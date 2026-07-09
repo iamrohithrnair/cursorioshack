@@ -1,5 +1,5 @@
 import * as Clipboard from 'expo-clipboard';
-import { Linking, Platform } from 'react-native';
+import { Linking } from 'react-native';
 
 /** Principles prepended to every phone → Cursor handoff. */
 export const DEV_PRINCIPLES = [
@@ -47,9 +47,9 @@ function sanitizeForDeeplink(prompt: string) {
     .replace(/[^\x09\x0A\x0D\x20-\x7E]/g, '');
 }
 
-function promptUrl(base: string, prompt: string) {
-  // Manual encode — more reliable than URL() for custom schemes in RN.
-  return `${base}?text=${encodeURIComponent(prompt)}`;
+function promptUrl(prompt: string) {
+  // Native scheme only — opens the Cursor app directly, not Safari.
+  return `cursor://anysphere.cursor-deeplink/prompt?text=${encodeURIComponent(prompt)}`;
 }
 
 function sleep(ms: number) {
@@ -72,8 +72,9 @@ export async function sendToCursorApp(intent: string): Promise<{
   url: string;
 }> {
   const prompt = sanitizeForDeeplink(buildCursorPrompt(intent));
+  const nativePromptUrl = promptUrl(prompt);
 
-  // Copy first so paste works even if the deeplink drops the query on iOS.
+  // Copy first so paste works if the app opens without prefilled text.
   let copied = false;
   try {
     await Clipboard.setStringAsync(prompt);
@@ -84,25 +85,30 @@ export async function sendToCursorApp(intent: string): Promise<{
     copied = false;
   }
 
-  const webUrl = promptUrl('https://cursor.com/link/prompt', prompt);
-  const nativeUrl = promptUrl('cursor://anysphere.cursor-deeplink/prompt', prompt);
-
-  // iOS: prefer the https universal link — it reliably hands text into Cursor.
-  // Native scheme often opens the app but drops ?text= on mobile.
-  const candidates =
-    Platform.OS === 'ios' ? [webUrl, nativeUrl] : [nativeUrl, webUrl];
+  // Open Cursor app only (cursor://). Never use https:// — that lands in Safari.
+  // Do not gate on canOpenURL — long custom-scheme URLs often return false on iOS
+  // even when the Cursor app is installed and can handle the link.
+  const candidates = [
+    nativePromptUrl,
+    // Shorter prompt URL if the full one fails to hand off.
+    `cursor://anysphere.cursor-deeplink/prompt?text=${encodeURIComponent(
+      sanitizeForDeeplink(
+        [
+          DEV_PRINCIPLES,
+          '',
+          intent.trim() || 'Investigate the latest failing CI on main.',
+        ].join('\n'),
+      ),
+    )}`,
+    // Last resort: just launch the Cursor app; prompt is on the clipboard.
+    'cursor://',
+  ];
 
   for (const url of candidates) {
-    // Do not gate on canOpenURL — long custom-scheme URLs often return false on iOS.
     if (await tryOpen(url)) {
       return { opened: true, prompt, copied, url };
     }
   }
 
-  // Last resort: open Cursor / agents home; prompt is already on clipboard.
-  if (await tryOpen('https://cursor.com/agents')) {
-    return { opened: true, prompt, copied, url: 'https://cursor.com/agents' };
-  }
-
-  return { opened: false, prompt, copied, url: webUrl };
+  return { opened: false, prompt, copied, url: nativePromptUrl };
 }
