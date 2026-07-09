@@ -1,3 +1,4 @@
+import { BlurView } from 'expo-blur';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { AutomationId, KeyBindings } from '../types';
@@ -222,36 +223,39 @@ function KeyboardComponent({
 
   return (
     <View style={styles.shell}>
-      <View style={styles.panel}>
-        <View style={styles.toolbar}>
-          <Text style={styles.toolbarHint}>
-            {mode === 'letters'
-              ? 'Hold Keysor bar to run'
-              : mode === 'emoji'
-                ? 'Emoji'
-                : mode === 'symbols'
-                  ? 'Symbols'
-                  : 'Numbers'}
-          </Text>
-          <View style={styles.modeDots}>
-            {(['letters', 'numbers', 'symbols', 'emoji'] as Mode[]).map((id) => (
-              <View key={id} style={[styles.dot, mode === id && styles.dotActive]} />
-            ))}
+      {/* One panel blur only — never per-key — keeps glass look without tap lag */}
+      <BlurView intensity={40} tint="light" style={styles.blur}>
+        <View style={styles.panel}>
+          <View style={styles.toolbar}>
+            <Text style={styles.toolbarHint}>
+              {mode === 'letters'
+                ? 'Hold Keysor bar to run'
+                : mode === 'emoji'
+                  ? 'Emoji'
+                  : mode === 'symbols'
+                    ? 'Symbols'
+                    : 'Numbers'}
+            </Text>
+            <View style={styles.modeDots}>
+              {(['letters', 'numbers', 'symbols', 'emoji'] as Mode[]).map((id) => (
+                <View key={id} style={[styles.dot, mode === id && styles.dotActive]} />
+              ))}
+            </View>
           </View>
+          {rows.map((row, i) => (
+            <View
+              key={`${mode}-${i}`}
+              style={[
+                styles.row,
+                mode === 'letters' && i === 1 && styles.rowIndent,
+                mode !== 'letters' && mode !== 'emoji' && i === 2 && styles.rowIndentWide,
+              ]}
+            >
+              {row.map((key) => renderKey(key, i))}
+            </View>
+          ))}
         </View>
-        {rows.map((row, i) => (
-          <View
-            key={`${mode}-${i}`}
-            style={[
-              styles.row,
-              mode === 'letters' && i === 1 && styles.rowIndent,
-              mode !== 'letters' && mode !== 'emoji' && i === 2 && styles.rowIndentWide,
-            ]}
-          >
-            {row.map((key) => renderKey(key, i))}
-          </View>
-        ))}
-      </View>
+      </BlurView>
     </View>
   );
 }
@@ -265,12 +269,15 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     backgroundColor: colors.keyboardTint,
   },
+  blur: {
+    overflow: 'hidden',
+  },
   panel: {
     paddingTop: 8,
     paddingBottom: 10,
     paddingHorizontal: 5,
     gap: 6,
-    backgroundColor: 'rgba(214,232,248,0.55)',
+    backgroundColor: 'rgba(214,232,248,0.28)',
   },
   toolbar: {
     flexDirection: 'row',
