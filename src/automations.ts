@@ -10,7 +10,7 @@ export const AUTOMATIONS: Record<AutomationId, Automation> = {
     title: 'Fix from phone',
     subtitle: 'Principles + bug → Cursor starts the fix',
     letter: 'C',
-    tint: '#F54E00',
+    tint: '#4B8CFF',
     downloads: '∞',
     creator: 'Keysor × Cursor',
     creatorSkills: '1 Skill',

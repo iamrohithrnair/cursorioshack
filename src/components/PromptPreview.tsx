@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.8,
-    color: '#F54E00',
+    color: colors.accent,
     textTransform: 'uppercase',
   },
   title: {
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
   },
   primary: {
     marginTop: 16,
-    backgroundColor: '#F54E00',
+    backgroundColor: colors.ink,
     borderRadius: 999,
     paddingVertical: 15,
     alignItems: 'center',

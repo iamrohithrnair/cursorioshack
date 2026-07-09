@@ -33,7 +33,7 @@ export default function App() {
   const [shift, setShift] = useState(false);
   const [bindings, setBindings] = useState<KeyBindings | null>(null);
   const [assignKey, setAssignKey] = useState<string | null>(null);
-  const [status, setStatus] = useState('Step 2: hold the orange space bar.');
+  const [status, setStatus] = useState('Step 2: hold the Keysor space bar.');
   const [claimed, setClaimed] = useState(false);
   const [sending, setSending] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -60,7 +60,7 @@ export default function App() {
 
   const loadDemo = useCallback(() => {
     setText(INCIDENT_DEMO);
-    setStatus('Demo loaded. Hold the orange space bar.');
+    setStatus('Demo loaded. Hold the Keysor space bar.');
     setTab('keyboard');
   }, []);
 

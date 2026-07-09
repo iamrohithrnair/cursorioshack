@@ -65,7 +65,7 @@ export function KeyboardScreen({
         </View>
         <View style={styles.step}>
           <Text style={styles.stepNum}>2</Text>
-          <Text style={styles.stepText}>Hold the orange space bar</Text>
+          <Text style={styles.stepText}>Hold the Keysor space bar</Text>
         </View>
         <View style={styles.step}>
           <Text style={styles.stepNum}>3</Text>
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1.2,
-    color: '#F54E00',
+    color: colors.accent,
   },
   headline: {
     marginTop: 4,
@@ -169,13 +169,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 14,
-    backgroundColor: 'rgba(245,78,0,0.08)',
+    backgroundColor: colors.accentSoft,
   },
   principlesLabel: {
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.7,
-    color: '#F54E00',
+    color: colors.accent,
     textTransform: 'uppercase',
     marginBottom: 4,
   },
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
   reload: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#F54E00',
+    color: colors.accent,
   },
   input: {
     minHeight: 96,

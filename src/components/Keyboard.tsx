@@ -226,7 +226,7 @@ function KeyboardComponent({
           <View style={styles.toolbar}>
           <Text style={styles.toolbarHint}>
             {mode === 'letters'
-              ? 'Hold orange space → Cursor (principles + bug)'
+              ? 'Hold Keysor bar → Cursor (principles + bug)'
               : mode === 'emoji'
                 ? 'Emoji'
                 : mode === 'symbols'
