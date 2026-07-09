@@ -4,6 +4,7 @@ import type { TabId } from '../types';
 import { colors } from '../theme';
 
 const TABS: { id: TabId; icon: string; label: string }[] = [
+  { id: 'setup', icon: '⚙', label: 'Setup' },
   { id: 'keyboard', icon: '⌨', label: 'Keyboard' },
   { id: 'skills', icon: '✦', label: 'Skills' },
   { id: 'builder', icon: '✧', label: 'Builder' },
@@ -41,16 +42,16 @@ export function FloatingTabBar({ active, onChange }: Props) {
 const styles = StyleSheet.create({
   wrap: {
     position: 'absolute',
-    left: 24,
-    right: 24,
+    left: 16,
+    right: 16,
     bottom: 18,
     alignItems: 'center',
   },
   bar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 10,
+    gap: 4,
+    paddingHorizontal: 8,
     paddingVertical: 8,
     borderRadius: 999,
     overflow: 'hidden',
@@ -63,9 +64,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
   },
   item: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -77,7 +78,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
   },
   icon: {
-    fontSize: 18,
+    fontSize: 16,
     color: colors.textMuted,
   },
   iconActive: {

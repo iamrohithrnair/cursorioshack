@@ -15,7 +15,13 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.keysor.keyboard",
       "infoPlist": {
-        "CFBundleDisplayName": "Keysor"
+        "CFBundleDisplayName": "Keysor",
+        "RequestsOpenAccess": true
+      },
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.keysor.keyboard"
+        ]
       }
     },
     "android": {
@@ -29,6 +35,9 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "@bacons/apple-targets"
+    ]
   }
 }

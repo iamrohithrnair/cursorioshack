@@ -20,4 +20,4 @@ export type Automation = {
 
 export type KeyBindings = Partial<Record<string, AutomationId>>;
 
-export type TabId = 'keyboard' | 'skills' | 'builder' | 'access';
+export type TabId = 'setup' | 'keyboard' | 'skills' | 'builder' | 'access';
