@@ -3,6 +3,8 @@ import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Keyboard,
+  Platform,
   SafeAreaView,
   StyleSheet,
   View,
@@ -47,6 +49,22 @@ export default function App() {
   const [cursorOpened, setCursorOpened] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
   const [lastIntent, setLastIntent] = useState(INCIDENT_DEMO);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const show = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => setKeyboardVisible(true),
+    );
+    const hide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => setKeyboardVisible(false),
+    );
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   useEffect(() => {
     void (async () => {
@@ -215,7 +233,7 @@ export default function App() {
         ) : null}
       </SafeAreaView>
 
-      <FloatingTabBar active={tab} onChange={setTab} />
+      {!keyboardVisible ? <FloatingTabBar active={tab} onChange={setTab} /> : null}
 
       <PromptPreview
         visible={previewOpen}

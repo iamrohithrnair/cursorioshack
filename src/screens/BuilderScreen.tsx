@@ -1,7 +1,10 @@
 import * as Haptics from 'expo-haptics';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -58,6 +61,26 @@ export function BuilderScreen({ customSkills, onDeploySkill }: Props) {
   const [baseURL, setBaseURL] = useState(DEFAULT_OPENAI_BASE_URL);
   const [hasKey, setHasKey] = useState(false);
   const [deploying, setDeploying] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const chatRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    const show = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+        requestAnimationFrame(() => chatRef.current?.scrollToEnd({ animated: true }));
+      },
+    );
+    const hide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => setKeyboardVisible(false),
+    );
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   const refreshConfig = useCallback(async () => {
     const config = await loadOpenAIConfig();
@@ -163,7 +186,11 @@ export function BuilderScreen({ customSkills, onDeploySkill }: Props) {
   };
 
   return (
-    <View style={styles.root}>
+    <KeyboardAvoidingView
+      style={styles.root}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
+    >
       <View style={styles.header}>
         <Pressable onPress={() => setShowSettings((v) => !v)} hitSlop={8}>
           <Text style={styles.settingsBtn}>{showSettings ? 'Done' : 'API'}</Text>
@@ -185,7 +212,11 @@ export function BuilderScreen({ customSkills, onDeploySkill }: Props) {
       </View>
 
       {showSettings ? (
-        <View style={styles.settings}>
+        <ScrollView
+          style={styles.settingsScroll}
+          contentContainerStyle={styles.settings}
+          keyboardShouldPersistTaps="handled"
+        >
           <Text style={styles.settingsTitle}>Model provider (on-device)</Text>
           <Text style={styles.settingsHint}>
             Any OpenAI-compatible API works. Set base URL + key + model (OpenAI, Groq, OpenRouter,
@@ -230,10 +261,17 @@ export function BuilderScreen({ customSkills, onDeploySkill }: Props) {
           <Pressable style={styles.saveKey} onPress={() => void saveSettings()}>
             <Text style={styles.saveKeyText}>Save</Text>
           </Pressable>
-        </View>
+        </ScrollView>
       ) : null}
 
-      <ScrollView contentContainerStyle={styles.chat} style={styles.chatWrap}>
+      <ScrollView
+        ref={chatRef}
+        contentContainerStyle={styles.chat}
+        style={styles.chatWrap}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        onContentSizeChange={() => chatRef.current?.scrollToEnd({ animated: true })}
+      >
         {messages.map((msg) =>
           msg.role === 'user' ? (
             <View key={msg.id} style={styles.userWrap}>
@@ -277,8 +315,10 @@ export function BuilderScreen({ customSkills, onDeploySkill }: Props) {
         ) : null}
       </ScrollView>
 
-      <View style={styles.footer}>
-        <Text style={styles.status}>{status}</Text>
+      <View style={[styles.footer, keyboardVisible && styles.footerKeyboard]}>
+        <Text style={styles.status} numberOfLines={2}>
+          {status}
+        </Text>
         <View style={styles.inputBar}>
           <TextInput
             value={draft}
@@ -289,13 +329,14 @@ export function BuilderScreen({ customSkills, onDeploySkill }: Props) {
             onSubmitEditing={() => void send()}
             returnKeyType="send"
             editable={!busy}
+            blurOnSubmit={false}
           />
           <Pressable style={styles.send} onPress={() => void send()} disabled={busy}>
             <Text style={styles.sendText}>■</Text>
           </Pressable>
         </View>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -341,9 +382,12 @@ const styles = StyleSheet.create({
   deployTextActive: {
     color: '#fff',
   },
-  settings: {
+  settingsScroll: {
+    maxHeight: 280,
     marginHorizontal: 18,
     marginBottom: 12,
+  },
+  settings: {
     padding: 14,
     borderRadius: 18,
     backgroundColor: colors.surface,
@@ -492,8 +536,14 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingHorizontal: 18,
+    paddingTop: 4,
     paddingBottom: 100,
     gap: 8,
+    backgroundColor: colors.bg,
+  },
+  footerKeyboard: {
+    // Soft keyboard covers the floating tab bar — drop that reserved space.
+    paddingBottom: 12,
   },
   status: {
     fontSize: 12,
