@@ -2,7 +2,7 @@ import type { Dispatch, SetStateAction } from 'react';
 import { useCallback } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Keyboard } from '../components/Keyboard';
-import { INCIDENT_DEMO } from '../demoIncident';
+import { INCIDENT_DEMO, PRINCIPLES_PREVIEW } from '../demoIncident';
 import type { AutomationId, KeyBindings } from '../types';
 import { colors } from '../theme';
 
@@ -53,8 +53,13 @@ export function KeyboardScreen({
         <Text style={styles.brand}>KEYSOR × CURSOR</Text>
         <Text style={styles.headline}>Fix bugs from your phone</Text>
         <Text style={styles.sub}>
-          Paste a Slack / CI ping. Hold the Keysor bar. Cursor starts the fix while your laptop stays closed.
+          Paste a Slack / CI ping. Hold the Keysor bar. Cursor gets your principles first, then the bug.
         </Text>
+      </View>
+
+      <View style={styles.principles}>
+        <Text style={styles.principlesLabel}>Prompt enhancement</Text>
+        <Text style={styles.principlesText}>{PRINCIPLES_PREVIEW}</Text>
       </View>
 
       <Pressable
@@ -64,7 +69,7 @@ export function KeyboardScreen({
           onRunSkill('cursor', ' ');
         }}
       >
-        <Text style={styles.demoChipText}>▶ Demo: CI failed — fix from phone</Text>
+        <Text style={styles.demoChipText}>▶ Demo: principles + CI bug → Cursor</Text>
       </Pressable>
 
       <View style={styles.composer}>
@@ -125,6 +130,28 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     color: colors.textSoft,
+  },
+  principles: {
+    marginHorizontal: 18,
+    marginBottom: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
+    backgroundColor: 'rgba(245,78,0,0.08)',
+  },
+  principlesLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.7,
+    color: '#F54E00',
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  principlesText: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.text,
+    fontWeight: '600',
   },
   demoChip: {
     marginHorizontal: 18,

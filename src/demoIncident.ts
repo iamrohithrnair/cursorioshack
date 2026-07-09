@@ -8,3 +8,10 @@ export const INCIDENT_DEMO = [
   'Blocking tonight’s TestFlight cut.',
   'Can you take a look? Laptop not with me.',
 ].join('\n');
+
+/** Shown in-app so the demo makes the principles visible before handoff. */
+export const PRINCIPLES_PREVIEW = [
+  'Follow YAGNI strictly',
+  "Before deletions → Chesterton's fence",
+  'Keep it super simple',
+].join(' · ');

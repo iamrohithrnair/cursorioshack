@@ -1,24 +1,33 @@
 import { Linking } from 'react-native';
 
+/** Principles prepended to every phone → Cursor handoff. */
+export const DEV_PRINCIPLES = [
+  'Follow YAGNI strictly — only build what this incident needs.',
+  "Before any deletions, apply Chesterton's fence: understand why the code exists before removing or rewriting it.",
+  'Keep the fix super simple — smallest safe change, no drive-by refactors.',
+].join('\n');
+
 /**
  * Real away-from-laptop problem:
- * You get a Slack / CI / review ping on your phone and can't open the laptop.
- * Keysor turns that pasted message into a Cursor agent that starts the fix.
+ * Slack / CI / review ping on your phone → Cursor starts the fix with your principles baked in.
  */
 export function buildCursorPrompt(intent: string) {
   const report = intent.trim() || 'Investigate the latest failing CI on main.';
   return [
     'I am away from my laptop. I pasted this from Slack / CI / review on my iPhone via Keysor.',
     '',
-    'Incident / request:',
+    '## My principles (follow these)',
+    DEV_PRINCIPLES,
+    '',
+    '## The bug / incident',
     '"""',
     report,
     '"""',
     '',
-    'Please:',
+    '## What to do',
     '1. Triage: what broke, where, and how serious',
     '2. Find the root cause in the repo',
-    '3. Implement the smallest safe fix',
+    '3. Implement the smallest safe fix (YAGNI + Chesterton\'s fence)',
     '4. Open or update a PR with a clear summary + how to verify',
     '5. Reply with status I can skim on my phone',
     '',
