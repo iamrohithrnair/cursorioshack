@@ -154,7 +154,11 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(180,210,255,0.7)',
   },
   ripple: {
-    ...StyleSheet.absoluteFill,
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
     backgroundColor: 'rgba(120,180,255,0.28)',
   },
   spark: {
