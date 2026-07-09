@@ -135,7 +135,7 @@ export const AUTOMATIONS: Record<AutomationId, Automation> = {
 
 export const AUTOMATION_LIST = Object.values(AUTOMATIONS);
 
-/** Keysor bar = Send to Cursor (wow demo). Other keys keep local skills. */
+/** Space bar is locked to Cursor handoff for the phone-triage demo. */
 export const DEFAULT_BINDINGS: KeyBindings = {
   ' ': 'cursor',
   q: 'summarize',

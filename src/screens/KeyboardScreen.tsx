@@ -13,8 +13,10 @@ type Props = {
   setShift: Dispatch<SetStateAction<boolean>>;
   bindings: KeyBindings;
   status: string;
+  sending: boolean;
   onRunSkill: (id: AutomationId, key: string) => void;
   onAssignKey: (key: string) => void;
+  onLoadDemo: () => void;
 };
 
 export function KeyboardScreen({
@@ -24,8 +26,10 @@ export function KeyboardScreen({
   setShift,
   bindings,
   status,
+  sending,
   onRunSkill,
   onAssignKey,
+  onLoadDemo,
 }: Props) {
   const onType = useCallback(
     (char: string) => {
@@ -50,30 +54,37 @@ export function KeyboardScreen({
   return (
     <View style={styles.root}>
       <View style={styles.header}>
-        <Text style={styles.brand}>KEYSOR × CURSOR</Text>
-        <Text style={styles.headline}>Fix bugs from your phone</Text>
-        <Text style={styles.sub}>
-          Paste a Slack / CI ping. Hold the Keysor bar. Cursor gets your principles first, then the bug.
-        </Text>
+        <Text style={styles.brand}>DEMO · FIX FROM PHONE</Text>
+        <Text style={styles.headline}>Hold space → Cursor</Text>
+      </View>
+
+      <View style={styles.steps}>
+        <View style={styles.step}>
+          <Text style={styles.stepNum}>1</Text>
+          <Text style={styles.stepText}>Incident loaded below</Text>
+        </View>
+        <View style={styles.step}>
+          <Text style={styles.stepNum}>2</Text>
+          <Text style={styles.stepText}>Hold the orange space bar</Text>
+        </View>
+        <View style={styles.step}>
+          <Text style={styles.stepNum}>3</Text>
+          <Text style={styles.stepText}>Cursor opens with principles + bug</Text>
+        </View>
       </View>
 
       <View style={styles.principles}>
-        <Text style={styles.principlesLabel}>Prompt enhancement</Text>
+        <Text style={styles.principlesLabel}>Always prepended to the prompt</Text>
         <Text style={styles.principlesText}>{PRINCIPLES_PREVIEW}</Text>
       </View>
 
-      <Pressable
-        style={styles.demoChip}
-        onPress={() => {
-          setText(INCIDENT_DEMO);
-          onRunSkill('cursor', ' ');
-        }}
-      >
-        <Text style={styles.demoChipText}>▶ Demo: principles + CI bug → Cursor</Text>
-      </Pressable>
-
       <View style={styles.composer}>
-        <Text style={styles.composerLabel}>Paste Slack / CI message</Text>
+        <View style={styles.composerTop}>
+          <Text style={styles.composerLabel}>Slack / CI message</Text>
+          <Pressable onPress={onLoadDemo}>
+            <Text style={styles.reload}>Reload demo</Text>
+          </Pressable>
+        </View>
         <TextInput
           value={text}
           onChangeText={setText}
@@ -83,7 +94,7 @@ export function KeyboardScreen({
           style={styles.input}
           showSoftInputOnFocus={false}
         />
-        <Text style={styles.status}>{status}</Text>
+        <Text style={styles.status}>{sending ? 'Opening Cursor…' : status}</Text>
       </View>
 
       <Keyboard
@@ -103,33 +114,54 @@ export function KeyboardScreen({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    paddingTop: 8,
+    paddingTop: 6,
     justifyContent: 'flex-end',
     paddingBottom: 78,
   },
   header: {
-    paddingHorizontal: 22,
-    marginBottom: 10,
+    paddingHorizontal: 20,
+    marginBottom: 8,
   },
   brand: {
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '800',
-    letterSpacing: 1.4,
-    color: colors.ink,
+    letterSpacing: 1.2,
+    color: '#F54E00',
   },
   headline: {
-    marginTop: 6,
-    fontSize: 26,
-    lineHeight: 30,
+    marginTop: 4,
+    fontSize: 28,
+    lineHeight: 32,
     fontWeight: '800',
     color: colors.ink,
-    letterSpacing: -0.4,
+    letterSpacing: -0.5,
   },
-  sub: {
-    marginTop: 6,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSoft,
+  steps: {
+    marginHorizontal: 18,
+    marginBottom: 8,
+    gap: 6,
+  },
+  step: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  stepNum: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    overflow: 'hidden',
+    textAlign: 'center',
+    lineHeight: 22,
+    backgroundColor: colors.ink,
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  stepText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
   },
   principles: {
     marginHorizontal: 18,
@@ -153,20 +185,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontWeight: '600',
   },
-  demoChip: {
-    marginHorizontal: 18,
-    marginBottom: 8,
-    alignSelf: 'flex-start',
-    backgroundColor: '#F54E00',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 999,
-  },
-  demoChipText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 13,
-  },
   composer: {
     marginHorizontal: 18,
     marginBottom: 10,
@@ -176,18 +194,28 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     backgroundColor: colors.surface,
   },
+  composerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
   composerLabel: {
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.6,
     color: colors.textMuted,
     textTransform: 'uppercase',
-    marginBottom: 6,
+  },
+  reload: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#F54E00',
   },
   input: {
-    minHeight: 88,
-    fontSize: 16,
-    lineHeight: 22,
+    minHeight: 96,
+    fontSize: 14,
+    lineHeight: 20,
     color: colors.text,
     textAlignVertical: 'top',
   },
@@ -195,6 +223,6 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 12,
     color: colors.accent,
-    fontWeight: '500',
+    fontWeight: '600',
   },
 });

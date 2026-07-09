@@ -68,18 +68,15 @@ function KeyboardComponent({
   const renderKey = useCallback(
     (raw: string, rowIndex: number) => {
       if (raw === 'space') {
-        const skill = bindings[' '];
+        // Demo contract: space bar ALWAYS sends principles + bug to Cursor.
         return (
           <GlassKey
             key="space"
-            label="Keysor"
+            label="Hold → Cursor"
             flex={mode === 'emoji' ? 3.2 : 4.4}
             variant="keysor"
-            onTap={() => onType(' ')}
-            onLongPress={() => {
-              if (skill) onRunSkill(skill, ' ');
-              else onAssignKey(' ');
-            }}
+            onTap={() => onRunSkill('cursor', ' ')}
+            onLongPress={() => onRunSkill('cursor', ' ')}
           />
         );
       }
@@ -227,15 +224,15 @@ function KeyboardComponent({
       <BlurView intensity={40} tint="light" style={styles.blur}>
         <View style={styles.panel}>
           <View style={styles.toolbar}>
-            <Text style={styles.toolbarHint}>
-              {mode === 'letters'
-                ? 'Hold Keysor bar to run'
-                : mode === 'emoji'
-                  ? 'Emoji'
-                  : mode === 'symbols'
-                    ? 'Symbols'
-                    : 'Numbers'}
-            </Text>
+          <Text style={styles.toolbarHint}>
+            {mode === 'letters'
+              ? 'Hold orange space → Cursor (principles + bug)'
+              : mode === 'emoji'
+                ? 'Emoji'
+                : mode === 'symbols'
+                  ? 'Symbols'
+                  : 'Numbers'}
+          </Text>
             <View style={styles.modeDots}>
               {(['letters', 'numbers', 'symbols', 'emoji'] as Mode[]).map((id) => (
                 <View key={id} style={[styles.dot, mode === id && styles.dotActive]} />
