@@ -1,16 +1,38 @@
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { AutomationId, KeyBindings } from '../types';
 import { colors } from '../theme';
 import { GlassKey } from './GlassKey';
 
-const ROWS = [
+type Mode = 'letters' | 'numbers' | 'symbols' | 'emoji';
+
+const LETTER_ROWS = [
   ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
   ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
-  ['⇧', 'z', 'x', 'c', 'v', 'b', 'n', 'm', '⌫'],
-  ['ABC', '☺', 'space', '⏎'],
-] as const;
+  ['shift', 'z', 'x', 'c', 'v', 'b', 'n', 'm', 'backspace'],
+  ['123', 'emoji', 'space', 'return'],
+];
+
+const NUMBER_ROWS = [
+  ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
+  ['-', '/', ':', ';', '(', ')', '$', '&', '@', '"'],
+  ['#+=', '.', ',', '?', '!', "'", 'backspace'],
+  ['ABC', 'emoji', 'space', 'return'],
+];
+
+const SYMBOL_ROWS = [
+  ['[', ']', '{', '}', '#', '%', '^', '*', '+', '='],
+  ['_', '\\', '|', '~', '<', '>', '€', '£', '¥', '•'],
+  ['123', '.', ',', '?', '!', "'", 'backspace'],
+  ['ABC', 'emoji', 'space', 'return'],
+];
+
+const EMOJI_ROWS = [
+  ['😀', '😂', '🥰', '😍', '😎', '🤔', '😭', '🔥'],
+  ['👍', '👏', '🙏', '💪', '🎉', '✨', '❤️', '💯'],
+  ['✅', '⭐', '🚀', '📅', '📍', '💡', '📎', '🔗'],
+  ['ABC', '123', 'space', 'return'],
+];
 
 type Props = {
   shift: boolean;
@@ -23,7 +45,7 @@ type Props = {
   onAssignKey: (key: string) => void;
 };
 
-export function Keyboard({
+function KeyboardComponent({
   shift,
   bindings,
   onType,
@@ -33,167 +55,257 @@ export function Keyboard({
   onRunSkill,
   onAssignKey,
 }: Props) {
-  const renderKey = (raw: string) => {
-    if (raw === 'space') {
-      const skill = bindings[' '];
-      return (
-        <GlassKey
-          key="space"
-          label="Keysor"
-          flex={4.4}
-          variant="keysor"
-          onTap={() => onType(' ')}
-          onLongPress={() => {
-            if (skill) onRunSkill(skill, ' ');
-            else onAssignKey(' ');
-          }}
-        />
-      );
-    }
+  const [mode, setMode] = useState<Mode>('letters');
 
-    if (raw === '⌫') {
-      return (
-        <GlassKey
-          key="backspace"
-          label="⌫"
-          flex={1.35}
-          variant="util"
-          onTap={onBackspace}
-        />
-      );
-    }
+  const rows = useMemo(() => {
+    if (mode === 'numbers') return NUMBER_ROWS;
+    if (mode === 'symbols') return SYMBOL_ROWS;
+    if (mode === 'emoji') return EMOJI_ROWS;
+    return LETTER_ROWS;
+  }, [mode]);
 
-    if (raw === '⇧') {
-      return (
-        <GlassKey
-          key="shift"
-          label={shift ? '⬆' : '⇧'}
-          flex={1.35}
-          variant="util"
-          onTap={onToggleShift}
-        />
-      );
-    }
+  const renderKey = useCallback(
+    (raw: string, rowIndex: number) => {
+      if (raw === 'space') {
+        const skill = bindings[' '];
+        return (
+          <GlassKey
+            key="space"
+            label="Keysor"
+            flex={mode === 'emoji' ? 3.2 : 4.4}
+            variant="keysor"
+            onTap={() => onType(' ')}
+            onLongPress={() => {
+              if (skill) onRunSkill(skill, ' ');
+              else onAssignKey(' ');
+            }}
+          />
+        );
+      }
 
-    if (raw === '⏎') {
-      return (
-        <GlassKey
-          key="return"
-          label="⏎"
-          flex={1.35}
-          variant="util"
-          onTap={onReturn}
-        />
-      );
-    }
+      if (raw === 'backspace') {
+        return (
+          <GlassKey
+            key={`backspace-${rowIndex}`}
+            label="⌫"
+            flex={mode === 'letters' ? 1.35 : 1.5}
+            variant="util"
+            onTap={onBackspace}
+          />
+        );
+      }
 
-    if (raw === 'ABC' || raw === '☺') {
+      if (raw === 'shift') {
+        return (
+          <GlassKey
+            key="shift"
+            label={shift ? '⬆' : '⇧'}
+            flex={1.35}
+            variant="util"
+            onTap={onToggleShift}
+          />
+        );
+      }
+
+      if (raw === 'return') {
+        return (
+          <GlassKey
+            key="return"
+            label="return"
+            flex={1.6}
+            variant="util"
+            onTap={onReturn}
+          />
+        );
+      }
+
+      if (raw === '123') {
+        return (
+          <GlassKey
+            key="to-numbers"
+            label="123"
+            flex={1.25}
+            variant="util"
+            onTap={() => setMode('numbers')}
+          />
+        );
+      }
+
+      if (raw === '#+=') {
+        return (
+          <GlassKey
+            key="to-symbols"
+            label="#+="
+            flex={1.5}
+            variant="util"
+            onTap={() => setMode('symbols')}
+          />
+        );
+      }
+
+      if (raw === 'ABC') {
+        return (
+          <GlassKey
+            key="to-letters"
+            label="ABC"
+            flex={1.25}
+            variant="util"
+            onTap={() => setMode('letters')}
+          />
+        );
+      }
+
+      if (raw === 'emoji') {
+        return (
+          <GlassKey
+            key="to-emoji"
+            label="☺"
+            flex={1.15}
+            variant="util"
+            onTap={() => setMode('emoji')}
+          />
+        );
+      }
+
+      if (mode === 'emoji') {
+        return (
+          <GlassKey
+            key={raw}
+            label={raw}
+            flex={1}
+            variant="emoji"
+            onTap={() => onType(raw)}
+          />
+        );
+      }
+
+      if (mode === 'letters') {
+        const char = shift ? raw.toUpperCase() : raw;
+        const skill = bindings[raw];
+        return (
+          <GlassKey
+            key={raw}
+            label={char}
+            flex={1}
+            skillBound={!!skill}
+            onTap={() => onType(char)}
+            onLongPress={() => {
+              if (skill) onRunSkill(skill, raw);
+              else onAssignKey(raw);
+            }}
+          />
+        );
+      }
+
+      // numbers / symbols
       return (
         <GlassKey
-          key={raw}
+          key={`${mode}-${raw}`}
           label={raw}
-          flex={1.15}
-          variant="util"
-          onTap={() => undefined}
+          flex={1}
+          onTap={() => onType(raw)}
         />
       );
-    }
-
-    const char = shift ? raw.toUpperCase() : raw;
-    const skill = bindings[raw];
-    return (
-      <GlassKey
-        key={raw}
-        label={char}
-        flex={1}
-        skillBound={!!skill}
-        onTap={() => onType(char)}
-        onLongPress={() => {
-          if (skill) onRunSkill(skill, raw);
-          else onAssignKey(raw);
-        }}
-      />
-    );
-  };
+    },
+    [
+      bindings,
+      mode,
+      onAssignKey,
+      onBackspace,
+      onReturn,
+      onRunSkill,
+      onToggleShift,
+      onType,
+      shift,
+    ],
+  );
 
   return (
     <View style={styles.shell}>
-      <BlurView intensity={55} tint="systemUltraThinMaterialLight" style={styles.blur}>
-        <LinearGradient
-          colors={['rgba(214,232,248,0.75)', 'rgba(245,248,252,0.9)', 'rgba(232,240,250,0.85)']}
-          style={styles.panel}
-        >
-          <View style={styles.toolbar}>
-            <Text style={styles.mic}>🎙</Text>
-            <Text style={styles.toolbarHint}>Hold Keysor bar to run</Text>
-            <View style={styles.logoMark}>
-              <Text style={styles.logoLetter}>K</Text>
-            </View>
+      <View style={styles.panel}>
+        <View style={styles.toolbar}>
+          <Text style={styles.toolbarHint}>
+            {mode === 'letters'
+              ? 'Hold Keysor bar to run'
+              : mode === 'emoji'
+                ? 'Emoji'
+                : mode === 'symbols'
+                  ? 'Symbols'
+                  : 'Numbers'}
+          </Text>
+          <View style={styles.modeDots}>
+            {(['letters', 'numbers', 'symbols', 'emoji'] as Mode[]).map((id) => (
+              <View key={id} style={[styles.dot, mode === id && styles.dotActive]} />
+            ))}
           </View>
-          {ROWS.map((row, i) => (
-            <View key={i} style={[styles.row, i === 1 && styles.rowIndent]}>
-              {row.map(renderKey)}
-            </View>
-          ))}
-        </LinearGradient>
-      </BlurView>
+        </View>
+        {rows.map((row, i) => (
+          <View
+            key={`${mode}-${i}`}
+            style={[
+              styles.row,
+              mode === 'letters' && i === 1 && styles.rowIndent,
+              mode !== 'letters' && mode !== 'emoji' && i === 2 && styles.rowIndentWide,
+            ]}
+          >
+            {row.map((key) => renderKey(key, i))}
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
 
+export const Keyboard = memo(KeyboardComponent);
+
 const styles = StyleSheet.create({
   shell: {
-    borderRadius: 28,
+    borderRadius: 24,
     overflow: 'hidden',
     marginHorizontal: 10,
-    shadowColor: colors.shadowStrong,
-    shadowOpacity: 1,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 8 },
-  },
-  blur: {
-    overflow: 'hidden',
+    backgroundColor: colors.keyboardTint,
   },
   panel: {
-    paddingTop: 10,
-    paddingBottom: 12,
-    paddingHorizontal: 6,
-    gap: 7,
+    paddingTop: 8,
+    paddingBottom: 10,
+    paddingHorizontal: 5,
+    gap: 6,
+    backgroundColor: 'rgba(214,232,248,0.55)',
   },
   toolbar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 10,
-    marginBottom: 2,
-  },
-  mic: {
-    fontSize: 14,
+    marginBottom: 1,
   },
   toolbarHint: {
     fontSize: 11,
     color: colors.textMuted,
     fontWeight: '500',
   },
-  logoMark: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: colors.ink,
-    alignItems: 'center',
-    justifyContent: 'center',
+  modeDots: {
+    flexDirection: 'row',
+    gap: 4,
   },
-  logoLetter: {
-    color: '#fff',
-    fontSize: 11,
-    fontWeight: '700',
+  dot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: 'rgba(17,17,17,0.15)',
+  },
+  dotActive: {
+    backgroundColor: colors.accent,
   },
   row: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 5,
     paddingHorizontal: 2,
   },
   rowIndent: {
-    paddingHorizontal: 18,
+    paddingHorizontal: 16,
+  },
+  rowIndentWide: {
+    paddingHorizontal: 28,
   },
 });

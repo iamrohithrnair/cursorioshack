@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -51,13 +51,18 @@ export default function App() {
     await saveBindings(next);
   };
 
-  const runSkill = (id: AutomationId, key: string) => {
-    const result = runAutomation(id, text);
-    setText(result);
-    setStatus(`Ran ${AUTOMATIONS[id].title} from ${key === ' ' ? 'Keysor bar' : key}`);
-    setTab('keyboard');
-    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-  };
+  const runSkill = useCallback(
+    (id: AutomationId, key: string) => {
+      setText((current) => {
+        const result = runAutomation(id, current);
+        return result;
+      });
+      setStatus(`Ran ${AUTOMATIONS[id].title} from ${key === ' ' ? 'Keysor bar' : key}`);
+      setTab('keyboard');
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    },
+    [],
+  );
 
   if (!ready || !bindings) {
     return (
