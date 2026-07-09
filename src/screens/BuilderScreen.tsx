@@ -48,7 +48,7 @@ export function BuilderScreen({ customSkills, onDeploySkill }: Props) {
   const [messages, setMessages] = useState<UiMsg[]>(STARTER);
   const [history, setHistory] = useState<BuilderChatMessage[]>([]);
   const [draft, setDraft] = useState('');
-  const [status, setStatus] = useState('Designer · Add an OpenAI key to start.');
+  const [status, setStatus] = useState('Designer · Add API key + base URL to start.');
   const [busy, setBusy] = useState(false);
   const [pendingDraft, setPendingDraft] = useState<BuilderDraft | null>(null);
   const [readyToDeploy, setReadyToDeploy] = useState(false);
@@ -66,9 +66,9 @@ export function BuilderScreen({ customSkills, onDeploySkill }: Props) {
     setBaseURL(config.baseURL);
     setHasKey(!!config.apiKey);
     if (config.apiKey) {
-      setStatus('Designer · Ready — describe a skill.');
+      setStatus(`Designer · Ready · ${config.model}`);
     } else {
-      setStatus('Designer · Add an OpenAI key to start.');
+      setStatus('Designer · Add API key + base URL to start.');
     }
   }, []);
 
@@ -86,7 +86,7 @@ export function BuilderScreen({ customSkills, onDeploySkill }: Props) {
     setShowSettings(false);
     setStatus(
       apiKey.trim()
-        ? `Designer · Key saved (${maskApiKey(apiKey.trim())}).`
+        ? `Designer · Saved ${maskApiKey(apiKey.trim())} · ${model.trim() || DEFAULT_OPENAI_MODEL}`
         : 'Designer · Key cleared.',
     );
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -98,7 +98,7 @@ export function BuilderScreen({ customSkills, onDeploySkill }: Props) {
 
     if (!hasKey) {
       setShowSettings(true);
-      setStatus('Designer · Paste your OpenAI API key first.');
+      setStatus('Designer · Paste API key + base URL first.');
       return;
     }
 
@@ -166,7 +166,7 @@ export function BuilderScreen({ customSkills, onDeploySkill }: Props) {
     <View style={styles.root}>
       <View style={styles.header}>
         <Pressable onPress={() => setShowSettings((v) => !v)} hitSlop={8}>
-          <Text style={styles.settingsBtn}>{showSettings ? 'Done' : 'Key'}</Text>
+          <Text style={styles.settingsBtn}>{showSettings ? 'Done' : 'API'}</Text>
         </Pressable>
         <Text style={styles.title}>Skill Builder</Text>
         <Pressable
@@ -186,30 +186,20 @@ export function BuilderScreen({ customSkills, onDeploySkill }: Props) {
 
       {showSettings ? (
         <View style={styles.settings}>
-          <Text style={styles.settingsTitle}>OpenAI (on-device)</Text>
+          <Text style={styles.settingsTitle}>Model provider (on-device)</Text>
           <Text style={styles.settingsHint}>
-            Keysor has no backend — the key stays in AsyncStorage on this phone. Use a restricted
-            key and rotate it if you share the device.
+            Any OpenAI-compatible API works. Set base URL + key + model (OpenAI, Groq, OpenRouter,
+            Together, Fireworks, xAI, local gateways, …). Values stay in AsyncStorage on this phone.
           </Text>
           <Text style={styles.label}>API key {hasKey ? `(${masked})` : ''}</Text>
           <TextInput
             value={apiKey}
             onChangeText={setApiKey}
-            placeholder="sk-…"
+            placeholder="sk-… or provider token"
             placeholderTextColor={colors.textMuted}
             autoCapitalize="none"
             autoCorrect={false}
             secureTextEntry
-            style={styles.field}
-          />
-          <Text style={styles.label}>Model</Text>
-          <TextInput
-            value={model}
-            onChangeText={setModel}
-            placeholder={DEFAULT_OPENAI_MODEL}
-            placeholderTextColor={colors.textMuted}
-            autoCapitalize="none"
-            autoCorrect={false}
             style={styles.field}
           />
           <Text style={styles.label}>Base URL</Text>
@@ -217,6 +207,21 @@ export function BuilderScreen({ customSkills, onDeploySkill }: Props) {
             value={baseURL}
             onChangeText={setBaseURL}
             placeholder={DEFAULT_OPENAI_BASE_URL}
+            placeholderTextColor={colors.textMuted}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="url"
+            style={styles.field}
+          />
+          <Text style={styles.examples}>
+            Examples: https://api.openai.com/v1 · https://api.groq.com/openai/v1 ·
+            https://openrouter.ai/api/v1 · https://api.x.ai/v1
+          </Text>
+          <Text style={styles.label}>Model</Text>
+          <TextInput
+            value={model}
+            onChangeText={setModel}
+            placeholder={DEFAULT_OPENAI_MODEL}
             placeholderTextColor={colors.textMuted}
             autoCapitalize="none"
             autoCorrect={false}
@@ -364,6 +369,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.textSoft,
     marginTop: 4,
+  },
+  examples: {
+    fontSize: 11,
+    lineHeight: 15,
+    color: colors.textMuted,
+    marginBottom: 2,
   },
   field: {
     borderRadius: 12,

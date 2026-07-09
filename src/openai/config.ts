@@ -36,13 +36,13 @@ export async function loadOpenAIConfig(): Promise<OpenAIConfig> {
     return {
       apiKey: (storedKey ?? '').trim() || envApiKey(),
       model: (storedModel ?? '').trim() || envModel(),
-      baseURL: (storedBase ?? '').trim() || envBaseURL(),
+      baseURL: normalizeOpenAIBaseURL((storedBase ?? '').trim() || envBaseURL()),
     };
   } catch {
     return {
       apiKey: envApiKey(),
       model: envModel(),
-      baseURL: envBaseURL(),
+      baseURL: normalizeOpenAIBaseURL(envBaseURL()),
     };
   }
 }
@@ -61,8 +61,14 @@ export async function saveOpenAIModel(model: string) {
   await AsyncStorage.setItem(MODEL_STORAGE, next);
 }
 
-export async function saveOpenAIBaseURL(baseURL: string) {
+/** Normalize provider base URLs for the OpenAI SDK (trim, drop trailing slash). */
+export function normalizeOpenAIBaseURL(baseURL: string): string {
   const next = baseURL.trim() || DEFAULT_OPENAI_BASE_URL;
+  return next.replace(/\/+$/, '');
+}
+
+export async function saveOpenAIBaseURL(baseURL: string) {
+  const next = normalizeOpenAIBaseURL(baseURL);
   await AsyncStorage.setItem(BASE_URL_STORAGE, next);
 }
 

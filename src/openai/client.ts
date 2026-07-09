@@ -3,7 +3,9 @@ import { loadOpenAIConfig, type OpenAIConfig } from './config';
 
 export class MissingOpenAIKeyError extends Error {
   constructor() {
-    super('Add an OpenAI API key in Skill Builder to design and run AI skills.');
+    super(
+      'Add an API key (and optional base URL) in Skill Builder → API to use any OpenAI-compatible model.',
+    );
     this.name = 'MissingOpenAIKeyError';
   }
 }
@@ -22,7 +24,7 @@ export async function createOpenAIClient(config?: OpenAIConfig): Promise<{
   }
 
   // Expo / React Native is treated like a browser runtime by the SDK.
-  // Key lives on-device (AsyncStorage) because Keysor has no backend.
+  // Key + base URL live on-device (AsyncStorage) because Keysor has no backend.
   const client = new OpenAI({
     apiKey: resolved.apiKey,
     baseURL: resolved.baseURL,
@@ -35,10 +37,15 @@ export async function createOpenAIClient(config?: OpenAIConfig): Promise<{
 export function formatOpenAIError(error: unknown): string {
   if (error instanceof MissingOpenAIKeyError) return error.message;
   if (error instanceof OpenAI.APIError) {
-    if (error.status === 401) return 'OpenAI rejected the API key. Check it in Skill Builder.';
-    if (error.status === 429) return 'OpenAI rate limit hit — try again in a moment.';
-    return error.message || 'OpenAI request failed.';
+    if (error.status === 401) {
+      return 'Provider rejected the API key. Check key + base URL in Skill Builder → API.';
+    }
+    if (error.status === 404) {
+      return 'Model or endpoint not found. Check model id and base URL (usually ends in /v1).';
+    }
+    if (error.status === 429) return 'Provider rate limit hit — try again in a moment.';
+    return error.message || 'Model request failed.';
   }
   if (error instanceof Error && error.message) return error.message;
-  return 'Something went wrong talking to OpenAI.';
+  return 'Something went wrong talking to the model provider.';
 }
