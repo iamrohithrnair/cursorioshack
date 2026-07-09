@@ -1,7 +1,8 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { useCallback } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Keyboard } from '../components/Keyboard';
+import { INCIDENT_DEMO } from '../demoIncident';
 import type { AutomationId, KeyBindings } from '../types';
 import { colors } from '../theme';
 
@@ -49,16 +50,30 @@ export function KeyboardScreen({
   return (
     <View style={styles.root}>
       <View style={styles.header}>
-        <Text style={styles.brand}>KEYSOR</Text>
-        <Text style={styles.headline}>Type · Hold · Act</Text>
+        <Text style={styles.brand}>KEYSOR × CURSOR</Text>
+        <Text style={styles.headline}>Fix bugs from your phone</Text>
+        <Text style={styles.sub}>
+          Paste a Slack / CI ping. Hold the Keysor bar. Cursor starts the fix while your laptop stays closed.
+        </Text>
       </View>
 
+      <Pressable
+        style={styles.demoChip}
+        onPress={() => {
+          setText(INCIDENT_DEMO);
+          onRunSkill('cursor', ' ');
+        }}
+      >
+        <Text style={styles.demoChipText}>▶ Demo: CI failed — fix from phone</Text>
+      </Pressable>
+
       <View style={styles.composer}>
+        <Text style={styles.composerLabel}>Paste Slack / CI message</Text>
         <TextInput
           value={text}
           onChangeText={setText}
           multiline
-          placeholder="plan a watch party for May 21 Knicks game"
+          placeholder={INCIDENT_DEMO}
           placeholderTextColor={colors.textMuted}
           style={styles.input}
           showSoftInputOnFocus={false}
@@ -105,6 +120,26 @@ const styles = StyleSheet.create({
     color: colors.ink,
     letterSpacing: -0.4,
   },
+  sub: {
+    marginTop: 6,
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.textSoft,
+  },
+  demoChip: {
+    marginHorizontal: 18,
+    marginBottom: 8,
+    alignSelf: 'flex-start',
+    backgroundColor: '#F54E00',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 999,
+  },
+  demoChipText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 13,
+  },
   composer: {
     marginHorizontal: 18,
     marginBottom: 10,
@@ -113,6 +148,14 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 10,
     backgroundColor: colors.surface,
+  },
+  composerLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    marginBottom: 6,
   },
   input: {
     minHeight: 88,

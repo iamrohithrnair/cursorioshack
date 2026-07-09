@@ -5,6 +5,29 @@ function clean(input: string) {
 }
 
 export const AUTOMATIONS: Record<AutomationId, Automation> = {
+  cursor: {
+    id: 'cursor',
+    title: 'Fix from phone',
+    subtitle: 'Paste a Slack/CI ping → Cursor starts the fix',
+    letter: 'C',
+    tint: '#F54E00',
+    downloads: '∞',
+    creator: 'Keysor × Cursor',
+    creatorSkills: '1 Skill',
+    run: (input) => {
+      const report = clean(input);
+      return [
+        '✦ Handed to Cursor',
+        '',
+        'Away-from-laptop triage started for:',
+        report.split('\n').slice(0, 4).join('\n'),
+        '',
+        'Cursor should open with a fix-agent prompt.',
+        'Confirm the agent → it investigates, patches, and opens a PR.',
+        'You stay on your phone.',
+      ].join('\n');
+    },
+  },
   plan: {
     id: 'plan',
     title: 'Instant Plan',
@@ -108,13 +131,15 @@ export const AUTOMATIONS: Record<AutomationId, Automation> = {
 
 export const AUTOMATION_LIST = Object.values(AUTOMATIONS);
 
+/** Keysor bar = Send to Cursor (wow demo). Other keys keep local skills. */
 export const DEFAULT_BINDINGS: KeyBindings = {
-  ' ': 'plan',
+  ' ': 'cursor',
   q: 'summarize',
   w: 'notion',
   e: 'schedule',
   a: 'location',
   s: 'rewrite',
+  p: 'plan',
 };
 
 export function runAutomation(id: AutomationId, input: string) {

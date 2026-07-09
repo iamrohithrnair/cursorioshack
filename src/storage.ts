@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DEFAULT_BINDINGS } from './automations';
 import type { KeyBindings } from './types';
 
-const BINDINGS_KEY = 'keysor.bindings.v1';
+const BINDINGS_KEY = 'keysor.bindings.v2';
 const SETUP_KEY = 'keysor.setup.done.v1';
 
 export async function loadBindings(): Promise<KeyBindings> {

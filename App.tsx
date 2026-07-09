@@ -10,6 +10,8 @@ import {
 import { AssignSheet } from './src/components/AssignSheet';
 import { FloatingTabBar } from './src/components/FloatingTabBar';
 import { AUTOMATIONS, runAutomation } from './src/automations';
+import { sendToCursorApp } from './src/cursorHandoff';
+import { INCIDENT_DEMO } from './src/demoIncident';
 import { AccessScreen } from './src/screens/AccessScreen';
 import { BuilderScreen } from './src/screens/BuilderScreen';
 import { KeyboardScreen } from './src/screens/KeyboardScreen';
@@ -27,11 +29,11 @@ import type { AutomationId, KeyBindings, TabId } from './src/types';
 export default function App() {
   const [ready, setReady] = useState(false);
   const [tab, setTab] = useState<TabId>('setup');
-  const [text, setText] = useState('');
+  const [text, setText] = useState(INCIDENT_DEMO);
   const [shift, setShift] = useState(false);
   const [bindings, setBindings] = useState<KeyBindings | null>(null);
   const [assignKey, setAssignKey] = useState<string | null>(null);
-  const [status, setStatus] = useState('Type an intent, then hold the Keysor bar.');
+  const [status, setStatus] = useState('Paste a Slack/CI ping, then hold Keysor bar.');
   const [claimed, setClaimed] = useState(false);
 
   useEffect(() => {
@@ -51,18 +53,35 @@ export default function App() {
     await saveBindings(next);
   };
 
-  const runSkill = useCallback(
-    (id: AutomationId, key: string) => {
-      setText((current) => {
-        const result = runAutomation(id, current);
-        return result;
-      });
-      setStatus(`Ran ${AUTOMATIONS[id].title} from ${key === ' ' ? 'Keysor bar' : key}`);
-      setTab('keyboard');
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    },
-    [],
-  );
+  const runSkill = useCallback((id: AutomationId, key: string) => {
+    setTab('keyboard');
+
+    if (id === 'cursor') {
+      void (async () => {
+        let intent = '';
+        setText((current) => {
+          intent = current;
+          return runAutomation('cursor', current);
+        });
+        const { opened } = await sendToCursorApp(intent);
+        setStatus(
+          opened
+            ? 'Opened Cursor — confirm the fix agent and keep your laptop closed.'
+            : 'Couldn’t open Cursor. Install Cursor iOS, then try again.',
+        );
+        void Haptics.notificationAsync(
+          opened
+            ? Haptics.NotificationFeedbackType.Success
+            : Haptics.NotificationFeedbackType.Warning,
+        );
+      })();
+      return;
+    }
+
+    setText((current) => runAutomation(id, current));
+    setStatus(`Ran ${AUTOMATIONS[id].title} from ${key === ' ' ? 'Keysor bar' : key}`);
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  }, []);
 
   if (!ready || !bindings) {
     return (

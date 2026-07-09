@@ -16,7 +16,10 @@
       "bundleIdentifier": "com.keysor.keyboard",
       "infoPlist": {
         "CFBundleDisplayName": "Keysor",
-        "RequestsOpenAccess": true
+        "RequestsOpenAccess": true,
+        "LSApplicationQueriesSchemes": [
+          "cursor"
+        ]
       },
       "entitlements": {
         "com.apple.security.application-groups": [
