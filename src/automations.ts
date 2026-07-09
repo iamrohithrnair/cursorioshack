@@ -5,6 +5,33 @@ function clean(input: string) {
 }
 
 export const AUTOMATIONS: Record<AutomationId, Automation> = {
+  cursor: {
+    id: 'cursor',
+    title: 'Fix from phone',
+    subtitle: 'Principles + bug → Cursor starts the fix',
+    letter: 'C',
+    tint: '#F54E00',
+    downloads: '∞',
+    creator: 'Keysor × Cursor',
+    creatorSkills: '1 Skill',
+    run: (input) => {
+      const report = clean(input);
+      return [
+        '✦ Handed to Cursor',
+        '',
+        'Prompt includes your principles:',
+        '• Follow YAGNI strictly',
+        "• Chesterton's fence before deletions",
+        '• Keep it super simple',
+        '',
+        'Then the bug:',
+        report.split('\n').slice(0, 4).join('\n'),
+        '',
+        'Confirm in Cursor → agent investigates, patches, opens a PR.',
+        'Laptop stays closed.',
+      ].join('\n');
+    },
+  },
   plan: {
     id: 'plan',
     title: 'Instant Plan',
@@ -108,13 +135,15 @@ export const AUTOMATIONS: Record<AutomationId, Automation> = {
 
 export const AUTOMATION_LIST = Object.values(AUTOMATIONS);
 
+/** Space bar is locked to Cursor handoff for the phone-triage demo. */
 export const DEFAULT_BINDINGS: KeyBindings = {
-  ' ': 'plan',
+  ' ': 'cursor',
   q: 'summarize',
   w: 'notion',
   e: 'schedule',
   a: 'location',
   s: 'rewrite',
+  p: 'plan',
 };
 
 export function runAutomation(id: AutomationId, input: string) {

@@ -9,7 +9,10 @@ import {
 } from 'react-native';
 import { AssignSheet } from './src/components/AssignSheet';
 import { FloatingTabBar } from './src/components/FloatingTabBar';
+import { PromptPreview } from './src/components/PromptPreview';
 import { AUTOMATIONS, runAutomation } from './src/automations';
+import { buildCursorPrompt, sendToCursorApp } from './src/cursorHandoff';
+import { INCIDENT_DEMO } from './src/demoIncident';
 import { AccessScreen } from './src/screens/AccessScreen';
 import { BuilderScreen } from './src/screens/BuilderScreen';
 import { KeyboardScreen } from './src/screens/KeyboardScreen';
@@ -17,7 +20,6 @@ import { SetupScreen } from './src/screens/SetupScreen';
 import { SkillsScreen } from './src/screens/SkillsScreen';
 import {
   loadBindings,
-  loadSetupDone,
   saveBindings,
   saveSetupDone,
 } from './src/storage';
@@ -26,42 +28,82 @@ import type { AutomationId, KeyBindings, TabId } from './src/types';
 
 export default function App() {
   const [ready, setReady] = useState(false);
-  const [tab, setTab] = useState<TabId>('setup');
-  const [text, setText] = useState('');
+  const [tab, setTab] = useState<TabId>('keyboard');
+  const [text, setText] = useState(INCIDENT_DEMO);
   const [shift, setShift] = useState(false);
   const [bindings, setBindings] = useState<KeyBindings | null>(null);
   const [assignKey, setAssignKey] = useState<string | null>(null);
-  const [status, setStatus] = useState('Type an intent, then hold the Keysor bar.');
+  const [status, setStatus] = useState('Step 2: hold the orange space bar.');
   const [claimed, setClaimed] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewPrompt, setPreviewPrompt] = useState('');
+  const [cursorOpened, setCursorOpened] = useState(false);
+  const [lastIntent, setLastIntent] = useState(INCIDENT_DEMO);
 
   useEffect(() => {
     void (async () => {
-      const [nextBindings, setupDone] = await Promise.all([
-        loadBindings(),
-        loadSetupDone(),
-      ]);
-      setBindings(nextBindings);
-      setTab(setupDone ? 'keyboard' : 'setup');
+      const nextBindings = await loadBindings();
+      // Space is always Cursor in the keyboard UI; keep binding in sync for Skills list.
+      const forced = { ...nextBindings, ' ': 'cursor' as const };
+      setBindings(forced);
+      setTab('keyboard');
       setReady(true);
     })();
   }, []);
 
   const updateBindings = async (next: KeyBindings) => {
-    setBindings(next);
-    await saveBindings(next);
+    const forced = { ...next, ' ': 'cursor' as const };
+    setBindings(forced);
+    await saveBindings(forced);
   };
+
+  const loadDemo = useCallback(() => {
+    setText(INCIDENT_DEMO);
+    setStatus('Demo loaded. Hold the orange space bar.');
+    setTab('keyboard');
+  }, []);
+
+  const handoffToCursor = useCallback(async (intent: string) => {
+    const payload = intent.trim() || INCIDENT_DEMO;
+    setSending(true);
+    setTab('keyboard');
+    setLastIntent(payload);
+    const prompt = buildCursorPrompt(payload);
+    setPreviewPrompt(prompt);
+
+    const { opened } = await sendToCursorApp(payload);
+    setCursorOpened(opened);
+    setPreviewOpen(true);
+    setText(runAutomation('cursor', payload));
+    setStatus(
+      opened
+        ? 'Cursor opened — confirm the agent. Principles are already in the prompt.'
+        : 'Deep link blocked — use Open in Cursor below (prompt is ready).',
+    );
+    setSending(false);
+    void Haptics.notificationAsync(
+      opened
+        ? Haptics.NotificationFeedbackType.Success
+        : Haptics.NotificationFeedbackType.Warning,
+    );
+  }, []);
 
   const runSkill = useCallback(
     (id: AutomationId, key: string) => {
-      setText((current) => {
-        const result = runAutomation(id, current);
-        return result;
-      });
-      setStatus(`Ran ${AUTOMATIONS[id].title} from ${key === ' ' ? 'Keysor bar' : key}`);
-      setTab('keyboard');
+      if (id === 'cursor' || key === ' ') {
+        // Prefer live field text; if already showing handoff receipt, resend last incident.
+        const live = text.trim();
+        const intent = live.includes('Handed to Cursor') ? lastIntent : live || INCIDENT_DEMO;
+        void handoffToCursor(intent);
+        return;
+      }
+
+      setText((current) => runAutomation(id, current));
+      setStatus(`Ran ${AUTOMATIONS[id].title} from ${key}`);
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     },
-    [],
+    [handoffToCursor, lastIntent, text],
   );
 
   if (!ready || !bindings) {
@@ -81,9 +123,9 @@ export default function App() {
           <SetupScreen
             onContinue={() => {
               void saveSetupDone();
-              setTab('keyboard');
+              loadDemo();
             }}
-            onOpenDemoKeyboard={() => setTab('keyboard')}
+            onOpenDemoKeyboard={loadDemo}
           />
         ) : null}
 
@@ -95,8 +137,10 @@ export default function App() {
             setShift={setShift}
             bindings={bindings}
             status={status}
+            sending={sending}
             onRunSkill={runSkill}
             onAssignKey={setAssignKey}
+            onLoadDemo={loadDemo}
           />
         ) : null}
 
@@ -116,24 +160,43 @@ export default function App() {
 
       <FloatingTabBar active={tab} onChange={setTab} />
 
+      <PromptPreview
+        visible={previewOpen}
+        prompt={previewPrompt}
+        opened={cursorOpened}
+        onClose={() => setPreviewOpen(false)}
+        onOpenCursor={() => {
+          void sendToCursorApp(lastIntent);
+        }}
+      />
+
       <AssignSheet
         visible={assignKey != null}
         keyLabel={assignKey}
         onClose={() => setAssignKey(null)}
         onPick={(id) => {
           if (!assignKey) return;
+          // Never rebind space away from Cursor during the demo.
+          if (assignKey === ' ') {
+            setAssignKey(null);
+            setStatus('Space bar is locked to Fix from phone for this demo.');
+            return;
+          }
           void updateBindings({ ...bindings, [assignKey]: id });
-          setStatus(
-            `Assigned ${AUTOMATIONS[id].title} to ${assignKey === ' ' ? 'Keysor bar' : assignKey}`,
-          );
+          setStatus(`Assigned ${AUTOMATIONS[id].title} to ${assignKey}`);
           setAssignKey(null);
         }}
         onClear={() => {
           if (!assignKey) return;
+          if (assignKey === ' ') {
+            setAssignKey(null);
+            setStatus('Space bar stays on Fix from phone for this demo.');
+            return;
+          }
           const next = { ...bindings };
           delete next[assignKey];
           void updateBindings(next);
-          setStatus(`Cleared skill on ${assignKey === ' ' ? 'Keysor bar' : assignKey}`);
+          setStatus(`Cleared skill on ${assignKey}`);
           setAssignKey(null);
         }}
       />

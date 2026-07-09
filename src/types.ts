@@ -1,4 +1,5 @@
 export type AutomationId =
+  | 'cursor'
   | 'plan'
   | 'summarize'
   | 'notion'

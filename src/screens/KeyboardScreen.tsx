@@ -1,7 +1,8 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { useCallback } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Keyboard } from '../components/Keyboard';
+import { INCIDENT_DEMO, PRINCIPLES_PREVIEW } from '../demoIncident';
 import type { AutomationId, KeyBindings } from '../types';
 import { colors } from '../theme';
 
@@ -12,8 +13,10 @@ type Props = {
   setShift: Dispatch<SetStateAction<boolean>>;
   bindings: KeyBindings;
   status: string;
+  sending: boolean;
   onRunSkill: (id: AutomationId, key: string) => void;
   onAssignKey: (key: string) => void;
+  onLoadDemo: () => void;
 };
 
 export function KeyboardScreen({
@@ -23,8 +26,10 @@ export function KeyboardScreen({
   setShift,
   bindings,
   status,
+  sending,
   onRunSkill,
   onAssignKey,
+  onLoadDemo,
 }: Props) {
   const onType = useCallback(
     (char: string) => {
@@ -49,21 +54,47 @@ export function KeyboardScreen({
   return (
     <View style={styles.root}>
       <View style={styles.header}>
-        <Text style={styles.brand}>KEYSOR</Text>
-        <Text style={styles.headline}>Type · Hold · Act</Text>
+        <Text style={styles.brand}>DEMO · FIX FROM PHONE</Text>
+        <Text style={styles.headline}>Hold space → Cursor</Text>
+      </View>
+
+      <View style={styles.steps}>
+        <View style={styles.step}>
+          <Text style={styles.stepNum}>1</Text>
+          <Text style={styles.stepText}>Incident loaded below</Text>
+        </View>
+        <View style={styles.step}>
+          <Text style={styles.stepNum}>2</Text>
+          <Text style={styles.stepText}>Hold the orange space bar</Text>
+        </View>
+        <View style={styles.step}>
+          <Text style={styles.stepNum}>3</Text>
+          <Text style={styles.stepText}>Cursor opens with principles + bug</Text>
+        </View>
+      </View>
+
+      <View style={styles.principles}>
+        <Text style={styles.principlesLabel}>Always prepended to the prompt</Text>
+        <Text style={styles.principlesText}>{PRINCIPLES_PREVIEW}</Text>
       </View>
 
       <View style={styles.composer}>
+        <View style={styles.composerTop}>
+          <Text style={styles.composerLabel}>Slack / CI message</Text>
+          <Pressable onPress={onLoadDemo}>
+            <Text style={styles.reload}>Reload demo</Text>
+          </Pressable>
+        </View>
         <TextInput
           value={text}
           onChangeText={setText}
           multiline
-          placeholder="plan a watch party for May 21 Knicks game"
+          placeholder={INCIDENT_DEMO}
           placeholderTextColor={colors.textMuted}
           style={styles.input}
           showSoftInputOnFocus={false}
         />
-        <Text style={styles.status}>{status}</Text>
+        <Text style={styles.status}>{sending ? 'Opening Cursor…' : status}</Text>
       </View>
 
       <Keyboard
@@ -83,27 +114,76 @@ export function KeyboardScreen({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    paddingTop: 8,
+    paddingTop: 6,
     justifyContent: 'flex-end',
     paddingBottom: 78,
   },
   header: {
-    paddingHorizontal: 22,
-    marginBottom: 10,
+    paddingHorizontal: 20,
+    marginBottom: 8,
   },
   brand: {
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '800',
-    letterSpacing: 1.4,
-    color: colors.ink,
+    letterSpacing: 1.2,
+    color: '#F54E00',
   },
   headline: {
-    marginTop: 6,
-    fontSize: 26,
-    lineHeight: 30,
+    marginTop: 4,
+    fontSize: 28,
+    lineHeight: 32,
     fontWeight: '800',
     color: colors.ink,
-    letterSpacing: -0.4,
+    letterSpacing: -0.5,
+  },
+  steps: {
+    marginHorizontal: 18,
+    marginBottom: 8,
+    gap: 6,
+  },
+  step: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  stepNum: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    overflow: 'hidden',
+    textAlign: 'center',
+    lineHeight: 22,
+    backgroundColor: colors.ink,
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  stepText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  principles: {
+    marginHorizontal: 18,
+    marginBottom: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
+    backgroundColor: 'rgba(245,78,0,0.08)',
+  },
+  principlesLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.7,
+    color: '#F54E00',
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  principlesText: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.text,
+    fontWeight: '600',
   },
   composer: {
     marginHorizontal: 18,
@@ -114,10 +194,28 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     backgroundColor: colors.surface,
   },
+  composerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  composerLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+  },
+  reload: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#F54E00',
+  },
   input: {
-    minHeight: 88,
-    fontSize: 16,
-    lineHeight: 22,
+    minHeight: 96,
+    fontSize: 14,
+    lineHeight: 20,
     color: colors.text,
     textAlignVertical: 'top',
   },
@@ -125,6 +223,6 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 12,
     color: colors.accent,
-    fontWeight: '500',
+    fontWeight: '600',
   },
 });

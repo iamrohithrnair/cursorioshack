@@ -51,7 +51,7 @@ function GlassKeyComponent({
         {isKeysor ? (
           <>
             <Text style={styles.spark}>✦</Text>
-            <Text style={styles.keysorLabel}>Keysor</Text>
+            <Text style={styles.keysorLabel}>{label}</Text>
           </>
         ) : (
           <Text
@@ -98,21 +98,21 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     flexDirection: 'row',
     gap: 6,
-    backgroundColor: '#EAF3FF',
+    backgroundColor: '#F54E00',
   },
   emojiKey: {
     backgroundColor: 'transparent',
     minHeight: 40,
   },
   spark: {
-    color: colors.accent,
+    color: '#fff',
     fontSize: 13,
     fontWeight: '700',
   },
   keysorLabel: {
-    color: colors.textSoft,
+    color: '#fff',
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   label: {
     color: colors.text,
