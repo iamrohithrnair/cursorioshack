@@ -16,7 +16,7 @@ type Props = {
   sending: boolean;
   onRunSkill: (id: AutomationId, key: string) => void;
   onAssignKey: (key: string) => void;
-  onLoadDemo: () => void;
+  onLoadIncident: () => void;
 };
 
 export function KeyboardScreen({
@@ -29,7 +29,7 @@ export function KeyboardScreen({
   sending,
   onRunSkill,
   onAssignKey,
-  onLoadDemo,
+  onLoadIncident,
 }: Props) {
   const onType = useCallback(
     (char: string) => {
@@ -54,22 +54,22 @@ export function KeyboardScreen({
   return (
     <View style={styles.root}>
       <View style={styles.header}>
-        <Text style={styles.brand}>DEMO · FIX FROM PHONE</Text>
-        <Text style={styles.headline}>Hold space → Cursor</Text>
+        <Text style={styles.brand}>KEYSOR × CURSOR</Text>
+        <Text style={styles.headline}>Fix bugs from your phone</Text>
       </View>
 
       <View style={styles.steps}>
         <View style={styles.step}>
           <Text style={styles.stepNum}>1</Text>
-          <Text style={styles.stepText}>Incident loaded below</Text>
+          <Text style={styles.stepText}>Paste a Slack / CI ping below</Text>
         </View>
         <View style={styles.step}>
           <Text style={styles.stepNum}>2</Text>
-          <Text style={styles.stepText}>Hold the orange space bar</Text>
+          <Text style={styles.stepText}>Hold the Keysor space bar</Text>
         </View>
         <View style={styles.step}>
           <Text style={styles.stepNum}>3</Text>
-          <Text style={styles.stepText}>Cursor opens with principles + bug</Text>
+          <Text style={styles.stepText}>Cursor opens with the fix prompt</Text>
         </View>
       </View>
 
@@ -81,8 +81,8 @@ export function KeyboardScreen({
       <View style={styles.composer}>
         <View style={styles.composerTop}>
           <Text style={styles.composerLabel}>Slack / CI message</Text>
-          <Pressable onPress={onLoadDemo}>
-            <Text style={styles.reload}>Reload demo</Text>
+          <Pressable onPress={onLoadIncident}>
+            <Text style={styles.reload}>Reset message</Text>
           </Pressable>
         </View>
         <TextInput
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1.2,
-    color: '#F54E00',
+    color: colors.accent,
   },
   headline: {
     marginTop: 4,
@@ -169,13 +169,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 14,
-    backgroundColor: 'rgba(245,78,0,0.08)',
+    backgroundColor: colors.accentSoft,
   },
   principlesLabel: {
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.7,
-    color: '#F54E00',
+    color: colors.accent,
     textTransform: 'uppercase',
     marginBottom: 4,
   },
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
   reload: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#F54E00',
+    color: colors.accent,
   },
   input: {
     minHeight: 96,

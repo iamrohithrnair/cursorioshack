@@ -14,7 +14,7 @@ import { colors } from '../theme';
 
 type Props = {
   onContinue: () => void;
-  onOpenDemoKeyboard: () => void;
+  onOpenKeyboard: () => void;
 };
 
 const STEPS = [
@@ -40,7 +40,7 @@ const STEPS = [
   },
 ] as const;
 
-export function SetupScreen({ onContinue, onOpenDemoKeyboard }: Props) {
+export function SetupScreen({ onContinue, onOpenKeyboard }: Props) {
   const [step, setStep] = useState(0);
   const [allowed, setAllowed] = useState(false);
   const pulse = useRef(new Animated.Value(0.35)).current;
@@ -121,7 +121,7 @@ export function SetupScreen({ onContinue, onOpenDemoKeyboard }: Props) {
           </View>
           {!allowed ? (
             <Pressable style={styles.allowBtn} onPress={requestFullAccessAck}>
-              <Text style={styles.allowBtnText}>Demo: tap Allow Full Access</Text>
+              <Text style={styles.allowBtnText}>Tap Allow Full Access</Text>
             </Pressable>
           ) : (
             <Text style={styles.allowedNote}>Permission granted — skills can run in any field.</Text>
@@ -178,10 +178,10 @@ export function SetupScreen({ onContinue, onOpenDemoKeyboard }: Props) {
         style={styles.secondary}
         onPress={() => {
           void Haptics.selectionAsync();
-          onOpenDemoKeyboard();
+          onOpenKeyboard();
         }}
       >
-        <Text style={styles.secondaryText}>Preview keyboard demo in-app</Text>
+        <Text style={styles.secondaryText}>Open keyboard</Text>
       </Pressable>
 
       <Pressable style={styles.continue} onPress={onContinue}>

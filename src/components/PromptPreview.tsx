@@ -5,21 +5,37 @@ type Props = {
   visible: boolean;
   prompt: string;
   opened: boolean;
+  copied: boolean;
   onClose: () => void;
   onOpenCursor: () => void;
 };
 
-export function PromptPreview({ visible, prompt, opened, onClose, onOpenCursor }: Props) {
+export function PromptPreview({
+  visible,
+  prompt,
+  opened,
+  copied,
+  onClose,
+  onOpenCursor,
+}: Props) {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
-          <Text style={styles.kicker}>{opened ? 'Sent to Cursor' : 'Enhanced prompt ready'}</Text>
+          <Text style={styles.kicker}>
+            {copied ? 'Prompt copied' : 'Enhanced prompt'}
+          </Text>
           <Text style={styles.title}>
-            {opened ? 'Confirm the agent in Cursor' : 'This is what Cursor will get'}
+            {opened ? 'Finish in Cursor' : 'Open Cursor to continue'}
           </Text>
           <Text style={styles.sub}>
-            Principles first, then the bug — hold space anytime to send again.
+            {opened
+              ? copied
+                ? 'Cursor should open with this prompt filled in. If the field is empty, long-press → Paste.'
+                : 'Confirm the agent prompt in Cursor.'
+              : copied
+                ? 'Prompt is on your clipboard. Open Cursor and paste into a new agent chat.'
+                : 'Open Cursor and paste this prompt into a new agent chat.'}
           </Text>
 
           <ScrollView style={styles.promptBox} contentContainerStyle={styles.promptContent}>
@@ -27,9 +43,7 @@ export function PromptPreview({ visible, prompt, opened, onClose, onOpenCursor }
           </ScrollView>
 
           <Pressable style={styles.primary} onPress={onOpenCursor}>
-            <Text style={styles.primaryText}>
-              {opened ? 'Open Cursor again' : 'Open in Cursor'}
-            </Text>
+            <Text style={styles.primaryText}>Open Cursor</Text>
           </Pressable>
           <Pressable style={styles.secondary} onPress={onClose}>
             <Text style={styles.secondaryText}>Back to Keysor</Text>
@@ -59,7 +73,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.8,
-    color: '#F54E00',
+    color: colors.accent,
     textTransform: 'uppercase',
   },
   title: {
@@ -91,7 +105,7 @@ const styles = StyleSheet.create({
   },
   primary: {
     marginTop: 16,
-    backgroundColor: '#F54E00',
+    backgroundColor: colors.ink,
     borderRadius: 999,
     paddingVertical: 15,
     alignItems: 'center',

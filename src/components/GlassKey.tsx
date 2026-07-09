@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { memo } from 'react';
 import {
   Pressable,
@@ -39,32 +40,42 @@ function GlassKeyComponent({
         onPress={onTap}
         onLongPress={onLongPress}
         delayLongPress={380}
-        style={({ pressed }) => [
-          styles.key,
-          variant === 'util' && styles.utilKey,
-          skillBound && styles.skillKey,
-          isKeysor && styles.keysorKey,
-          isEmoji && styles.emojiKey,
-          pressed && styles.pressed,
-        ]}
+        style={styles.press}
       >
-        {isKeysor ? (
-          <>
-            <Text style={styles.spark}>✦</Text>
-            <Text style={styles.keysorLabel}>{label}</Text>
-          </>
-        ) : (
-          <Text
-            style={[
-              styles.label,
-              variant === 'util' && styles.utilLabel,
-              isEmoji && styles.emojiLabel,
-            ]}
-            numberOfLines={1}
-          >
-            {label}
-          </Text>
-        )}
+        {({ pressed }) =>
+          isKeysor ? (
+            <LinearGradient
+              colors={['#EAF3FF', '#F7FBFF', '#E8F0FF', '#F4ECFF']}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+              style={[styles.key, styles.keysorKey, pressed && styles.pressed]}
+            >
+              <Text style={styles.spark}>✦</Text>
+              <Text style={styles.keysorLabel}>{label}</Text>
+            </LinearGradient>
+          ) : (
+            <View
+              style={[
+                styles.key,
+                variant === 'util' && styles.utilKey,
+                skillBound && styles.skillKey,
+                isEmoji && styles.emojiKey,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.label,
+                  variant === 'util' && styles.utilLabel,
+                  isEmoji && styles.emojiLabel,
+                ]}
+                numberOfLines={1}
+              >
+                {label}
+              </Text>
+            </View>
+          )
+        }
       </Pressable>
     </View>
   );
@@ -75,6 +86,10 @@ export const GlassKey = memo(GlassKeyComponent);
 const styles = StyleSheet.create({
   wrap: {
     minHeight: 42,
+  },
+  press: {
+    flex: 1,
+    borderRadius: 12,
   },
   key: {
     flex: 1,
@@ -98,19 +113,20 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     flexDirection: 'row',
     gap: 6,
-    backgroundColor: '#F54E00',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(180,210,255,0.7)',
   },
   emojiKey: {
     backgroundColor: 'transparent',
     minHeight: 40,
   },
   spark: {
-    color: '#fff',
+    color: colors.accent,
     fontSize: 13,
     fontWeight: '700',
   },
   keysorLabel: {
-    color: '#fff',
+    color: colors.textSoft,
     fontSize: 13,
     fontWeight: '700',
   },

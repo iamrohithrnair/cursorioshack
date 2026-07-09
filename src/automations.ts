@@ -10,7 +10,7 @@ export const AUTOMATIONS: Record<AutomationId, Automation> = {
     title: 'Fix from phone',
     subtitle: 'Principles + bug → Cursor starts the fix',
     letter: 'C',
-    tint: '#F54E00',
+    tint: '#4B8CFF',
     downloads: '∞',
     creator: 'Keysor × Cursor',
     creatorSkills: '1 Skill',
@@ -135,7 +135,7 @@ export const AUTOMATIONS: Record<AutomationId, Automation> = {
 
 export const AUTOMATION_LIST = Object.values(AUTOMATIONS);
 
-/** Space bar is locked to Cursor handoff for the phone-triage demo. */
+/** Space bar is locked to Cursor handoff for phone triage. */
 export const DEFAULT_BINDINGS: KeyBindings = {
   ' ': 'cursor',
   q: 'summarize',
