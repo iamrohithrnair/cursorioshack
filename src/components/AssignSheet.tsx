@@ -1,17 +1,25 @@
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AUTOMATION_LIST } from '../automations';
-import type { AutomationId } from '../types';
+import type { AutomationId, CustomSkill } from '../types';
 import { colors } from '../theme';
 
 type Props = {
   visible: boolean;
   keyLabel: string | null;
+  customSkills: CustomSkill[];
   onClose: () => void;
   onPick: (id: AutomationId) => void;
   onClear: () => void;
 };
 
-export function AssignSheet({ visible, keyLabel, onClose, onPick, onClear }: Props) {
+export function AssignSheet({
+  visible,
+  keyLabel,
+  customSkills,
+  onClose,
+  onPick,
+  onClear,
+}: Props) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
@@ -20,7 +28,25 @@ export function AssignSheet({ visible, keyLabel, onClose, onPick, onClear }: Pro
           <Text style={styles.sub}>
             Long-press {keyLabel === ' ' ? 'Keysor bar' : keyLabel ?? 'key'} to run this automation
           </Text>
-          <View style={styles.list}>
+          <ScrollView style={styles.scroll} contentContainerStyle={styles.list}>
+            {customSkills.length > 0 ? (
+              <>
+                <Text style={styles.section}>YOUR SKILLS</Text>
+                {customSkills.map((item) => (
+                  <Pressable key={item.id} style={styles.row} onPress={() => onPick(item.id)}>
+                    <View style={[styles.badge, { backgroundColor: item.tint }]}>
+                      <Text style={styles.badgeText}>{item.letter}</Text>
+                    </View>
+                    <View style={styles.copy}>
+                      <Text style={styles.rowTitle}>{item.title}</Text>
+                      <Text style={styles.rowSub}>{item.subtitle}</Text>
+                    </View>
+                    <Text style={styles.chevron}>›</Text>
+                  </Pressable>
+                ))}
+              </>
+            ) : null}
+            <Text style={styles.section}>BUILT-IN</Text>
             {AUTOMATION_LIST.map((item) => (
               <Pressable key={item.id} style={styles.row} onPress={() => onPick(item.id)}>
                 <View style={[styles.badge, { backgroundColor: item.tint }]}>
@@ -33,7 +59,7 @@ export function AssignSheet({ visible, keyLabel, onClose, onPick, onClear }: Pro
                 <Text style={styles.chevron}>›</Text>
               </Pressable>
             ))}
-          </View>
+          </ScrollView>
           <Pressable style={styles.clear} onPress={onClear}>
             <Text style={styles.clearText}>Clear skill</Text>
           </Pressable>
@@ -51,6 +77,7 @@ const styles = StyleSheet.create({
   },
   sheet: {
     margin: 12,
+    maxHeight: '78%',
     borderRadius: 28,
     padding: 20,
     backgroundColor: colors.surface,
@@ -70,8 +97,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textMuted,
   },
+  scroll: {
+    maxHeight: 360,
+  },
   list: {
     gap: 10,
+    paddingBottom: 4,
+  },
+  section: {
+    marginTop: 4,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+    color: colors.textMuted,
   },
   row: {
     flexDirection: 'row',

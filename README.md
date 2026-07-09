@@ -12,11 +12,22 @@ Type an intent, hold the Keysor bar, and get the result written in place. Built 
 - **Glass keyboard UI** — in-app QWERTY demo with skill bindings and haptic feedback
 - **Setup / Full Access walkthrough** — interactive demo of Add Keyboard + Allow Full Access
 - **Native Keyboard Extension** — real system keyboard target under `targets/keyboard` for Dev / TestFlight builds
-- **AI integration via OpenAI** — skills can call OpenAI for generation and rewriting
+- **AI integration via OpenAI-compatible APIs** — Skill Builder designs custom skills; set API key + base URL + model for OpenAI, Groq, OpenRouter, xAI, etc.
 
 ### Cursor handoff (demo)
 
-Keysor can hand a phone triage prompt to the Cursor app via deeplink + clipboard (`cursor://…`). Full **Cursor SDK** integration is not wired yet — Expo does not support the Cursor SDK today, so the agentic path uses OpenAI instead of an in-app Cursor agent runtime.
+Keysor can hand a phone triage prompt to the Cursor app via deeplink + clipboard (`cursor://…`). Full **Cursor SDK** integration is not wired yet — Expo does not support the Cursor SDK today. For in-app AI skills, open **Skill Builder → API** and paste key + base URL (stored on-device; Keysor has no backend).
+
+### OpenAI-compatible Skill Builder
+
+1. Open **Builder** → tap **API** → paste **API key**, **base URL**, and **model**.
+   - OpenAI: `https://api.openai.com/v1` + `gpt-4o-mini`
+   - Groq: `https://api.groq.com/openai/v1` + e.g. `llama-3.3-70b-versatile`
+   - OpenRouter: `https://openrouter.ai/api/v1` + any routed model id
+   - xAI: `https://api.x.ai/v1` + e.g. `grok-3` (requires credits)
+2. Describe a Shortcuts-style skill (“rewrite this Slack ping as a calm customer reply and draft a Notion capture”).
+3. When the draft looks right, tap **Deploy** — the skill is saved and bound to **R**.
+4. On **Keyboard**, long-press **R** to run it against the text field via your provider.
 
 ## Tabs
 

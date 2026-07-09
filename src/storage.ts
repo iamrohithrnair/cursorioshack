@@ -1,6 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DEFAULT_BINDINGS } from './automations';
-import type { KeyBindings } from './types';
+import {
+  deleteCustomSkill,
+  loadCustomSkills,
+  saveCustomSkills,
+  upsertCustomSkill,
+} from './customSkills';
+import type { CustomSkill, KeyBindings, SkillId } from './types';
 
 const BINDINGS_KEY = 'keysor.bindings.v2';
 const SETUP_KEY = 'keysor.setup.done.v1';
@@ -30,3 +36,12 @@ export async function loadSetupDone(): Promise<boolean> {
 export async function saveSetupDone() {
   await AsyncStorage.setItem(SETUP_KEY, '1');
 }
+
+export {
+  deleteCustomSkill,
+  loadCustomSkills,
+  saveCustomSkills,
+  upsertCustomSkill,
+};
+
+export type { CustomSkill, SkillId };
