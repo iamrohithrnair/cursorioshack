@@ -1,7 +1,7 @@
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, View } from 'react-native';
 import type { AutomationId, KeyBindings } from '../types';
-import { AUTOMATIONS } from '../automations';
 import { colors } from '../theme';
 import { GlassKey } from './GlassKey';
 
@@ -9,7 +9,7 @@ const ROWS = [
   ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
   ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
   ['⇧', 'z', 'x', 'c', 'v', 'b', 'n', 'm', '⌫'],
-  ['123', '🌐', 'space', 'return'],
+  ['ABC', '☺', 'space', '⏎'],
 ] as const;
 
 type Props = {
@@ -39,10 +39,9 @@ export function Keyboard({
       return (
         <GlassKey
           key="space"
-          label="space"
-          flex={4.2}
-          tall
-          skillLabel={skill ? AUTOMATIONS[skill].emoji : undefined}
+          label="Keysor"
+          flex={4.4}
+          variant="keysor"
           onTap={() => onType(' ')}
           onLongPress={() => {
             if (skill) onRunSkill(skill, ' ');
@@ -58,8 +57,8 @@ export function Keyboard({
           key="backspace"
           label="⌫"
           flex={1.35}
+          variant="util"
           onTap={onBackspace}
-          onLongPress={() => onAssignKey('⌫')}
         />
       );
     }
@@ -70,30 +69,31 @@ export function Keyboard({
           key="shift"
           label={shift ? '⬆' : '⇧'}
           flex={1.35}
+          variant="util"
           onTap={onToggleShift}
         />
       );
     }
 
-    if (raw === 'return') {
+    if (raw === '⏎') {
       return (
         <GlassKey
           key="return"
-          label="return"
-          flex={1.7}
-          tall
+          label="⏎"
+          flex={1.35}
+          variant="util"
           onTap={onReturn}
         />
       );
     }
 
-    if (raw === '123' || raw === '🌐') {
+    if (raw === 'ABC' || raw === '☺') {
       return (
         <GlassKey
           key={raw}
           label={raw}
           flex={1.15}
-          tall
+          variant="util"
           onTap={() => undefined}
         />
       );
@@ -106,7 +106,7 @@ export function Keyboard({
         key={raw}
         label={char}
         flex={1}
-        skillLabel={skill ? AUTOMATIONS[skill].emoji : undefined}
+        skillBound={!!skill}
         onTap={() => onType(char)}
         onLongPress={() => {
           if (skill) onRunSkill(skill, raw);
@@ -118,15 +118,24 @@ export function Keyboard({
 
   return (
     <View style={styles.shell}>
-      <BlurView intensity={70} tint="systemMaterialLight" style={styles.panel}>
-        <View style={styles.hintRow}>
-          <Text style={styles.hint}>Hold a key to run its skill · Hold empty key to assign</Text>
-        </View>
-        {ROWS.map((row, i) => (
-          <View key={i} style={[styles.row, i === 1 && styles.rowIndent]}>
-            {row.map(renderKey)}
+      <BlurView intensity={55} tint="systemUltraThinMaterialLight" style={styles.blur}>
+        <LinearGradient
+          colors={['rgba(214,232,248,0.75)', 'rgba(245,248,252,0.9)', 'rgba(232,240,250,0.85)']}
+          style={styles.panel}
+        >
+          <View style={styles.toolbar}>
+            <Text style={styles.mic}>🎙</Text>
+            <Text style={styles.toolbarHint}>Hold Keysor bar to run</Text>
+            <View style={styles.logoMark}>
+              <Text style={styles.logoLetter}>K</Text>
+            </View>
           </View>
-        ))}
+          {ROWS.map((row, i) => (
+            <View key={i} style={[styles.row, i === 1 && styles.rowIndent]}>
+              {row.map(renderKey)}
+            </View>
+          ))}
+        </LinearGradient>
       </BlurView>
     </View>
   );
@@ -134,27 +143,50 @@ export function Keyboard({
 
 const styles = StyleSheet.create({
   shell: {
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
+    borderRadius: 28,
     overflow: 'hidden',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.glassEdge,
+    marginHorizontal: 10,
+    shadowColor: colors.shadowStrong,
+    shadowOpacity: 1,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+  },
+  blur: {
+    overflow: 'hidden',
   },
   panel: {
     paddingTop: 10,
-    paddingBottom: 18,
+    paddingBottom: 12,
     paddingHorizontal: 6,
-    backgroundColor: 'rgba(232,241,245,0.55)',
-    gap: 8,
+    gap: 7,
   },
-  hintRow: {
+  toolbar: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
     marginBottom: 2,
   },
-  hint: {
+  mic: {
+    fontSize: 14,
+  },
+  toolbarHint: {
     fontSize: 11,
     color: colors.textMuted,
-    letterSpacing: 0.2,
+    fontWeight: '500',
+  },
+  logoMark: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: colors.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoLetter: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
   },
   row: {
     flexDirection: 'row',

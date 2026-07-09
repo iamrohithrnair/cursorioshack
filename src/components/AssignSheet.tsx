@@ -1,4 +1,3 @@
-import { BlurView } from 'expo-blur';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { AUTOMATION_LIST } from '../automations';
 import type { AutomationId } from '../types';
@@ -16,31 +15,28 @@ export function AssignSheet({ visible, keyLabel, onClose, onPick, onClear }: Pro
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={styles.sheetWrap} onPress={(e) => e.stopPropagation()}>
-          <BlurView intensity={80} tint="systemThickMaterialLight" style={styles.sheet}>
-            <Text style={styles.title}>Assign skill</Text>
-            <Text style={styles.sub}>
-              Long-press {keyLabel === ' ' ? 'space' : keyLabel ?? 'key'} to run this automation
-            </Text>
-            <View style={styles.list}>
-              {AUTOMATION_LIST.map((item) => (
-                <Pressable
-                  key={item.id}
-                  style={styles.row}
-                  onPress={() => onPick(item.id)}
-                >
-                  <Text style={styles.emoji}>{item.emoji}</Text>
-                  <View style={styles.copy}>
-                    <Text style={styles.rowTitle}>{item.title}</Text>
-                    <Text style={styles.rowSub}>{item.subtitle}</Text>
-                  </View>
-                </Pressable>
-              ))}
-            </View>
-            <Pressable style={styles.clear} onPress={onClear}>
-              <Text style={styles.clearText}>Clear skill</Text>
-            </Pressable>
-          </BlurView>
+        <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+          <Text style={styles.title}>Assign skill</Text>
+          <Text style={styles.sub}>
+            Long-press {keyLabel === ' ' ? 'Keysor bar' : keyLabel ?? 'key'} to run this automation
+          </Text>
+          <View style={styles.list}>
+            {AUTOMATION_LIST.map((item) => (
+              <Pressable key={item.id} style={styles.row} onPress={() => onPick(item.id)}>
+                <View style={[styles.badge, { backgroundColor: item.tint }]}>
+                  <Text style={styles.badgeText}>{item.letter}</Text>
+                </View>
+                <View style={styles.copy}>
+                  <Text style={styles.rowTitle}>{item.title}</Text>
+                  <Text style={styles.rowSub}>{item.subtitle}</Text>
+                </View>
+                <Text style={styles.chevron}>›</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Pressable style={styles.clear} onPress={onClear}>
+            <Text style={styles.clearText}>Clear skill</Text>
+          </Pressable>
         </Pressable>
       </Pressable>
     </Modal>
@@ -50,33 +46,32 @@ export function AssignSheet({ visible, keyLabel, onClose, onPick, onClear }: Pro
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(11,28,44,0.35)',
+    backgroundColor: 'rgba(17,17,17,0.28)',
     justifyContent: 'flex-end',
   },
-  sheetWrap: {
-    padding: 12,
-  },
   sheet: {
-    borderRadius: 24,
-    overflow: 'hidden',
+    margin: 12,
+    borderRadius: 28,
     padding: 20,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.glassEdge,
-    backgroundColor: colors.glassStrong,
+    backgroundColor: colors.surface,
+    shadowColor: colors.shadowStrong,
+    shadowOpacity: 1,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
   },
   title: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '700',
-    color: colors.text,
+    color: colors.ink,
   },
   sub: {
     marginTop: 6,
-    marginBottom: 14,
+    marginBottom: 16,
     fontSize: 14,
     color: colors.textMuted,
   },
   list: {
-    gap: 8,
+    gap: 10,
   },
   row: {
     flexDirection: 'row',
@@ -84,14 +79,20 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 12,
     paddingHorizontal: 12,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.45)',
+    borderRadius: 18,
+    backgroundColor: colors.surfaceMuted,
   },
-  emoji: {
-    fontSize: 20,
-    color: colors.accent,
-    width: 28,
-    textAlign: 'center',
+  badge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
   },
   copy: {
     flex: 1,
@@ -104,6 +105,10 @@ const styles = StyleSheet.create({
   rowSub: {
     marginTop: 2,
     fontSize: 13,
+    color: colors.textMuted,
+  },
+  chevron: {
+    fontSize: 22,
     color: colors.textMuted,
   },
   clear: {

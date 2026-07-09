@@ -7,9 +7,13 @@ function clean(input: string) {
 export const AUTOMATIONS: Record<AutomationId, Automation> = {
   plan: {
     id: 'plan',
-    title: 'Plan',
+    title: 'Instant Plan',
     subtitle: 'Turn intent into a short plan',
-    emoji: '✦',
+    letter: 'P',
+    tint: '#4B8CFF',
+    downloads: '18.2K',
+    creator: 'Keysor Labs',
+    creatorSkills: '12 Skills',
     run: (input) => {
       const topic = clean(input);
       return [
@@ -24,9 +28,13 @@ export const AUTOMATIONS: Record<AutomationId, Automation> = {
   },
   summarize: {
     id: 'summarize',
-    title: 'Summarize',
-    subtitle: 'Compress text into bullets',
-    emoji: '◎',
+    title: 'Super Reply',
+    subtitle: 'Compress text into a sharp reply',
+    letter: 'R',
+    tint: '#7C6CFF',
+    downloads: '24.1K',
+    creator: 'VisionaryAI',
+    creatorSkills: '20 Skills',
     run: (input) => {
       const text = clean(input);
       const words = text.split(/\s+/).slice(0, 18).join(' ');
@@ -35,9 +43,13 @@ export const AUTOMATIONS: Record<AutomationId, Automation> = {
   },
   notion: {
     id: 'notion',
-    title: 'Log to Notion',
+    title: 'Notion Capture',
     subtitle: 'Format a capture for Notion',
-    emoji: '◇',
+    letter: 'N',
+    tint: '#111111',
+    downloads: '12.4K',
+    creator: 'Workflow Club',
+    creatorSkills: '9 Skills',
     run: (input) => {
       const note = clean(input);
       const stamp = new Date().toLocaleString();
@@ -46,9 +58,13 @@ export const AUTOMATIONS: Record<AutomationId, Automation> = {
   },
   schedule: {
     id: 'schedule',
-    title: 'Schedule',
+    title: 'Instant Meet',
     subtitle: 'Draft a simple schedule',
-    emoji: '◷',
+    letter: 'G',
+    tint: '#2BB673',
+    downloads: '9.8K',
+    creator: 'Calendar Crew',
+    creatorSkills: '7 Skills',
     run: (input) => {
       const topic = clean(input);
       return [
@@ -62,9 +78,13 @@ export const AUTOMATIONS: Record<AutomationId, Automation> = {
   },
   location: {
     id: 'location',
-    title: 'Share spot',
+    title: 'Address HUD',
     subtitle: 'Drop a quick location note',
-    emoji: '⌖',
+    letter: 'A',
+    tint: '#FF8A3D',
+    downloads: '7.1K',
+    creator: 'Local Layer',
+    creatorSkills: '5 Skills',
     run: (input) => {
       const place = clean(input);
       return `I'm near ${place}. Meet here in 10? I'll share a pin if needed.`;
@@ -72,9 +92,13 @@ export const AUTOMATIONS: Record<AutomationId, Automation> = {
   },
   rewrite: {
     id: 'rewrite',
-    title: 'Rewrite',
+    title: 'Post Rewriter',
     subtitle: 'Make it clearer and warmer',
-    emoji: '✎',
+    letter: 'W',
+    tint: '#E4578C',
+    downloads: '15.6K',
+    creator: 'Copy Desk',
+    creatorSkills: '14 Skills',
     run: (input) => {
       const text = clean(input);
       return `Quick rewrite:\n"${text}"\n\nClearer version:\nHey — ${text.replace(/^[a-z]/, (c) => c.toUpperCase())}. Let me know what works.`;
