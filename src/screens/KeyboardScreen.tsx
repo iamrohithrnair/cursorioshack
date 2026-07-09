@@ -16,7 +16,7 @@ type Props = {
   sending: boolean;
   onRunSkill: (id: AutomationId, key: string) => void;
   onAssignKey: (key: string) => void;
-  onLoadDemo: () => void;
+  onLoadIncident: () => void;
 };
 
 export function KeyboardScreen({
@@ -29,7 +29,7 @@ export function KeyboardScreen({
   sending,
   onRunSkill,
   onAssignKey,
-  onLoadDemo,
+  onLoadIncident,
 }: Props) {
   const onType = useCallback(
     (char: string) => {
@@ -54,14 +54,14 @@ export function KeyboardScreen({
   return (
     <View style={styles.root}>
       <View style={styles.header}>
-        <Text style={styles.brand}>DEMO · FIX FROM PHONE</Text>
-        <Text style={styles.headline}>Hold space → Cursor</Text>
+        <Text style={styles.brand}>KEYSOR × CURSOR</Text>
+        <Text style={styles.headline}>Fix bugs from your phone</Text>
       </View>
 
       <View style={styles.steps}>
         <View style={styles.step}>
           <Text style={styles.stepNum}>1</Text>
-          <Text style={styles.stepText}>Incident loaded below</Text>
+          <Text style={styles.stepText}>Paste a Slack / CI ping below</Text>
         </View>
         <View style={styles.step}>
           <Text style={styles.stepNum}>2</Text>
@@ -69,7 +69,7 @@ export function KeyboardScreen({
         </View>
         <View style={styles.step}>
           <Text style={styles.stepNum}>3</Text>
-          <Text style={styles.stepText}>Cursor opens with principles + bug</Text>
+          <Text style={styles.stepText}>Cursor opens with the fix prompt</Text>
         </View>
       </View>
 
@@ -81,8 +81,8 @@ export function KeyboardScreen({
       <View style={styles.composer}>
         <View style={styles.composerTop}>
           <Text style={styles.composerLabel}>Slack / CI message</Text>
-          <Pressable onPress={onLoadDemo}>
-            <Text style={styles.reload}>Reload demo</Text>
+          <Pressable onPress={onLoadIncident}>
+            <Text style={styles.reload}>Reset message</Text>
           </Pressable>
         </View>
         <TextInput

@@ -68,7 +68,7 @@ function KeyboardComponent({
   const renderKey = useCallback(
     (raw: string, rowIndex: number) => {
       if (raw === 'space') {
-        // Demo contract: space bar ALWAYS sends principles + bug to Cursor.
+        // Space bar always sends principles + bug to Cursor.
         return (
           <GlassKey
             key="space"

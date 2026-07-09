@@ -33,12 +33,13 @@ export default function App() {
   const [shift, setShift] = useState(false);
   const [bindings, setBindings] = useState<KeyBindings | null>(null);
   const [assignKey, setAssignKey] = useState<string | null>(null);
-  const [status, setStatus] = useState('Step 2: hold the Keysor space bar.');
+  const [status, setStatus] = useState('Hold the Keysor space bar to send to Cursor.');
   const [claimed, setClaimed] = useState(false);
   const [sending, setSending] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewPrompt, setPreviewPrompt] = useState('');
   const [cursorOpened, setCursorOpened] = useState(false);
+  const [promptCopied, setPromptCopied] = useState(false);
   const [lastIntent, setLastIntent] = useState(INCIDENT_DEMO);
 
   useEffect(() => {
@@ -58,9 +59,9 @@ export default function App() {
     await saveBindings(forced);
   };
 
-  const loadDemo = useCallback(() => {
+  const loadIncident = useCallback(() => {
     setText(INCIDENT_DEMO);
-    setStatus('Demo loaded. Hold the Keysor space bar.');
+    setStatus('Message loaded. Hold the Keysor space bar.');
     setTab('keyboard');
   }, []);
 
@@ -72,18 +73,23 @@ export default function App() {
     const prompt = buildCursorPrompt(payload);
     setPreviewPrompt(prompt);
 
-    const { opened } = await sendToCursorApp(payload);
+    const { opened, copied } = await sendToCursorApp(payload);
     setCursorOpened(opened);
+    setPromptCopied(copied);
     setPreviewOpen(true);
     setText(runAutomation('cursor', payload));
     setStatus(
       opened
-        ? 'Cursor opened — confirm the agent. Principles are already in the prompt.'
-        : 'Deep link blocked — use Open in Cursor below (prompt is ready).',
+        ? copied
+          ? 'Cursor opened. If chat is empty, paste — prompt is on your clipboard.'
+          : 'Cursor opened — confirm the agent prompt.'
+        : copied
+          ? 'Prompt copied. Open Cursor and paste into a new agent chat.'
+          : 'Couldn’t open Cursor. Copy the prompt from the sheet below.',
     );
     setSending(false);
     void Haptics.notificationAsync(
-      opened
+      opened || copied
         ? Haptics.NotificationFeedbackType.Success
         : Haptics.NotificationFeedbackType.Warning,
     );
@@ -123,9 +129,9 @@ export default function App() {
           <SetupScreen
             onContinue={() => {
               void saveSetupDone();
-              loadDemo();
+              loadIncident();
             }}
-            onOpenDemoKeyboard={loadDemo}
+            onOpenKeyboard={loadIncident}
           />
         ) : null}
 
@@ -140,7 +146,7 @@ export default function App() {
             sending={sending}
             onRunSkill={runSkill}
             onAssignKey={setAssignKey}
-            onLoadDemo={loadDemo}
+            onLoadIncident={loadIncident}
           />
         ) : null}
 
@@ -164,9 +170,13 @@ export default function App() {
         visible={previewOpen}
         prompt={previewPrompt}
         opened={cursorOpened}
+        copied={promptCopied}
         onClose={() => setPreviewOpen(false)}
         onOpenCursor={() => {
-          void sendToCursorApp(lastIntent);
+          void sendToCursorApp(lastIntent).then(({ opened, copied }) => {
+            setCursorOpened(opened);
+            setPromptCopied(copied);
+          });
         }}
       />
 
@@ -176,10 +186,10 @@ export default function App() {
         onClose={() => setAssignKey(null)}
         onPick={(id) => {
           if (!assignKey) return;
-          // Never rebind space away from Cursor during the demo.
+          // Space stays locked to Cursor phone triage.
           if (assignKey === ' ') {
             setAssignKey(null);
-            setStatus('Space bar is locked to Fix from phone for this demo.');
+            setStatus('Space bar is locked to Fix from phone.');
             return;
           }
           void updateBindings({ ...bindings, [assignKey]: id });
@@ -190,7 +200,7 @@ export default function App() {
           if (!assignKey) return;
           if (assignKey === ' ') {
             setAssignKey(null);
-            setStatus('Space bar stays on Fix from phone for this demo.');
+            setStatus('Space bar stays on Fix from phone.');
             return;
           }
           const next = { ...bindings };
